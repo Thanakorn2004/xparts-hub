@@ -138,4 +138,6 @@ app.delete('/api/:col/:id', validCol, requireAuth, (req, res) => {
 });
 app.delete('/api/:col', validCol, requireAuth, (req, res) => { writeCol(req.params.col, []); res.json({ ok: true }); });
 
-app.listen(PORT, () => console.log('XParts Hub running at http://localhost:' + PORT));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`XParts Hub running on port ${PORT}`);
+});
