@@ -1,0 +1,50 @@
+[
+  {
+    "id": 101,
+    "name": "Dran Sword 3-60F",
+    "type": "ATTACK",
+    "weight": null,
+    "image": "",
+    "description": "เบย์สายโจมตีจากชุดเริ่มต้น BX-01 ใบมีดทรงดาบ 3 แฉก เน้นพุ่งชนด้วย Xtreme Dash"
+  },
+  {
+    "id": 102,
+    "name": "Hells Scythe 4-60T",
+    "type": "BALANCE",
+    "weight": null,
+    "image": "",
+    "description": "เคียวนรกสายสมดุล เล่นได้ทั้งเกมรุกและเกมรับ"
+  },
+  {
+    "id": 103,
+    "name": "Wizard Arrow 4-80B",
+    "type": "STAMINA",
+    "weight": null,
+    "image": "",
+    "description": "ลูกศรเวทมนตร์สายทนทาน หมุนนิ่งต่อเนื่อง เอาชนะด้วย Spin Finish"
+  },
+  {
+    "id": 104,
+    "name": "Knight Shield 3-80N",
+    "type": "DEFENSE",
+    "weight": null,
+    "image": "",
+    "description": "โล่อัศวินสายป้องกัน ปักหลักกลางสนามรับทุกการปะทะ"
+  },
+  {
+    "id": 105,
+    "name": "Dran Dagger 4-60R",
+    "type": "ATTACK",
+    "weight": null,
+    "image": "",
+    "description": "มีดสั้นคู่สายโจมตี ความเร็วสูง เข้าทำต่อเนื่อง"
+  },
+  {
+    "id": 106,
+    "name": "Phoenix Wing 9-60GF",
+    "type": "ATTACK",
+    "weight": null,
+    "image": "",
+    "description": "ปีกฟีนิกซ์รุ่นหนัก แรงปะทะสูง พร้อมบิทเฟือง Gear Flat"
+  }
+]

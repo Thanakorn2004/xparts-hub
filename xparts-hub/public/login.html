@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | XParts Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { 'x-green': '#caff04', 'x-red': '#ff003c' } } } };
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background:#09090b; }
+    .login-input:focus { border-color:#caff04; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-6">
+      <div class="inline-block bg-x-green text-black px-5 py-2 font-x text-3xl box-cut-small">XPARTS</div>
+      <div class="font-x text-2xl text-white mt-2">HUB</div>
+      <div class="text-[10px] text-zinc-500 tracking-[4px] font-bold mt-1">ADMINISTRATION SYSTEM</div>
+    </div>
+
+    <div class="bg-zinc-950 border-2 border-zinc-800 box-cut p-8">
+      <p class="text-[10px] text-x-red tracking-[3px] font-bold">RESTRICTED AREA</p>
+      <h1 class="font-x text-4xl text-white mt-1">ADMIN <span class="c-x-green">LOGIN</span></h1>
+      <p class="text-zinc-500 text-sm font-bold mt-1 mb-6">เข้าสู่ระบบจัดการ XParts Hub</p>
+
+      <p id="login-error" class="hidden bg-red-600 text-white font-bold text-sm px-4 py-3 box-cut-small mb-4"></p>
+
+      <form id="login-form" class="space-y-5">
+        <label class="block">
+          <span class="text-xs text-zinc-400 tracking-widest font-bold">EMAIL</span>
+          <input type="email" name="email" required autocomplete="email" placeholder="admin@example.com"
+                 class="login-input w-full bg-black border-2 border-zinc-700 text-white px-4 py-3 box-cut-small mt-1">
+        </label>
+        <label class="block">
+          <span class="text-xs text-zinc-400 tracking-widest font-bold">PASSWORD</span>
+          <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••"
+                 class="login-input w-full bg-black border-2 border-zinc-700 text-white px-4 py-3 box-cut-small mt-1">
+        </label>
+        <button type="submit" class="w-full bg-x-green text-black font-x text-2xl py-3 box-cut-small hover:bg-white transition-colors">LOGIN →</button>
+      </form>
+
+      <a href="index.html" class="block text-center text-zinc-600 hover:text-x-green transition-colors text-sm font-bold mt-6">← BACK TO WEBSITE</a>
+    </div>
+
+    <p class="text-center text-zinc-700 text-[10px] tracking-widest font-bold mt-6">XPARTS HUB // BEYBLADE X DATABASE</p>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    (function () {
+      XPartsAuth.me().then(function () { location.href = 'admin.html'; }).catch(function () {});
+      var form = document.getElementById('login-form');
+      var errBox = document.getElementById('login-error');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        errBox.classList.add('hidden');
+        XPartsAuth.login(form.email.value, form.password.value)
+          .then(function () { location.href = 'admin.html'; })
+          .catch(function (err) { errBox.textContent = err.message || 'เข้าสู่ระบบไม่สำเร็จ'; errBox.classList.remove('hidden'); });
+      });
+    })();
+  </script>
+</body>
+</html>

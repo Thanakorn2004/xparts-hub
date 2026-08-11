@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ชิ้นส่วน Blade | XParts Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { 'x-green': '#caff04', 'x-red': '#ff003c', 'x-dark': '#09090b' } } } };
+  </script>
+  <link rel="stylesheet" href="style.css">
+  
+</head>
+<body class="bg-halftone min-h-screen pb-20">
+  <header class="bg-zinc-950 border-b-4 border-x-green sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex flex-col xl:flex-row items-center justify-between gap-4">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="font-x text-4xl italic font-bold flex">
+          <span class="text-white text-shadow-none">XPARTS</span><span class="c-x-green ml-1 transform scale-110 text-shadow-none">HUB</span>
+        </div>
+        <span class="hidden md:block text-[10px] text-zinc-500 tracking-[3px] font-bold">BEYBLADE X DATABASE</span>
+      </a>
+      <nav class="flex flex-wrap justify-center gap-2 items-center">
+        <a href="index.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">HOME</a>
+        <a href="about.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">ABOUT X</a>
+        <a href="beyblades.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">BEYBLADE</a>
+        <a href="blade.html" class="slanted bg-x-green text-black font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-black">BLADE</a>
+        <a href="ratchet.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">RATCHET</a>
+        <a href="bit.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">BIT</a>
+        <a href="rules.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">RULES</a>
+        <a href="search.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">SEARCH</a>
+        <a href="login.html" id="nav-login" class="slanted bg-x-red text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-black hover:bg-white hover:text-black transition-colors">LOGIN</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 mt-8 max-w-6xl relative space-y-10">
+
+    <div class="text-center">
+      <h2 class="font-x text-5xl md:text-6xl italic text-shadow-none">BLADE CATALOG</h2>
+      <p class="font-bold text-white bg-black inline-block px-4 py-1 box-cut mt-2">สารานุกรมใบมีดหลัก — ชิ้นส่วนบนสุดของเบย์เบลด X</p>
+    </div>
+    <div class="bg-white border-[3px] border-black box-cut p-5 max-w-3xl mx-auto text-center">
+      <p class="text-sm text-zinc-600 font-medium"><strong>Blade</strong> คือใบมีดโลหะด้านบน เป็นชิ้นส่วนหลักที่ใช้ปะทะ น้ำหนักและรูปทรงของใบมีดกำหนดสไตล์การเล่น ทั้งสายโจมตี ป้องกัน ทนทาน และสมดุล</p>
+    </div>
+    <div id="catalog-filters" class="flex flex-wrap justify-center gap-2"></div>
+    <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </main>
+
+  <footer class="bg-black text-zinc-400 py-8 mt-16 border-t-8 border-x-red text-center">
+    <div class="font-x text-3xl text-white mb-2 italic text-shadow-none">XPARTS <span class="c-x-green">HUB</span></div>
+    <p class="text-[10px] font-bold">BEYBLADE X DATABASE &middot; EDUCATION PROJECT</p>
+  </footer>
+
+  <script src="store.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // Swap LOGIN -> ADMIN when already logged in.
+    XPartsAuth.me().then(function () {
+      var b = document.getElementById('nav-login');
+      if (b) { b.textContent = 'ADMIN'; b.href = 'admin.html'; }
+    }).catch(function () {});
+  </script>
+  <script src="catalog.js"></script>
+  <script>initCatalog('blades', { useFilter: true, emptyMsg: 'ยังไม่มีข้อมูล Blade — เพิ่มได้จากหน้า Admin' });</script>
+</body>
+</html>

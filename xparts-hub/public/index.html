@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>หน้าแรก | XParts Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { 'x-green': '#caff04', 'x-red': '#ff003c', 'x-dark': '#09090b' } } } };
+  </script>
+  <link rel="stylesheet" href="style.css">
+  
+</head>
+<body class="bg-halftone min-h-screen pb-20">
+  <header class="bg-zinc-950 border-b-4 border-x-green sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex flex-col xl:flex-row items-center justify-between gap-4">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="font-x text-4xl italic font-bold flex">
+          <span class="text-white text-shadow-none">XPARTS</span><span class="c-x-green ml-1 transform scale-110 text-shadow-none">HUB</span>
+        </div>
+        <span class="hidden md:block text-[10px] text-zinc-500 tracking-[3px] font-bold">BEYBLADE X DATABASE</span>
+      </a>
+      <nav class="flex flex-wrap justify-center gap-2 items-center">
+        <a href="index.html" class="slanted bg-x-green text-black font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-black">HOME</a>
+        <a href="about.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">ABOUT X</a>
+        <a href="beyblades.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">BEYBLADE</a>
+        <a href="blade.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">BLADE</a>
+        <a href="ratchet.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">RATCHET</a>
+        <a href="bit.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">BIT</a>
+        <a href="rules.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">RULES</a>
+        <a href="search.html" class="slanted bg-zinc-800 text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">SEARCH</a>
+        <a href="login.html" id="nav-login" class="slanted bg-x-red text-white font-x text-lg md:text-xl px-4 pt-2 pb-1 border-2 border-black hover:bg-white hover:text-black transition-colors">LOGIN</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 mt-8 max-w-6xl relative space-y-10">
+
+    <div class="box-cut bg-zinc-950 text-white p-8 md:p-12 shadow-xl border-l-8 border-x-green text-center md:text-left">
+      <h1 class="font-x text-6xl md:text-8xl italic mb-2 tracking-tight text-shadow-none">XTREME <span class="c-x-green">DASH!</span></h1>
+      <p class="font-bold text-zinc-400 text-sm md:text-base max-w-xl mx-auto md:mx-0">คลังข้อมูลเบย์เบลด X ที่สมบูรณ์ที่สุด — คลิกที่สายการเล่นเพื่อดูรายชื่อเบย์เบลดที่คุณต้องการ!</p>
+      <div class="flex flex-wrap gap-3 mt-6 justify-center md:justify-start">
+        <a href="about.html" class="slanted bg-x-green text-black font-x text-xl px-6 pt-2 pb-1 border-2 border-black hover:bg-white transition-colors">รู้จัก BEYBLADE X →</a>
+        <a href="search.html" class="slanted bg-zinc-800 text-white font-x text-xl px-6 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700 transition-colors">ค้นหาข้อมูล</a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <a href="beyblades.html?type=ATTACK" class="bg-white border-[3px] border-black box-cut p-4 cursor-pointer hover:-translate-y-2 hover:shadow-[6px_6px_0_0_#ff003c] transition-all group block">
+        <div class="bg-black text-white font-x text-4xl text-center pt-2 pb-1 slanted mb-4 mx-2 group-hover:scale-105 transition-transform"><span class="text-[#ffb703] text-shadow-none">ATTACK</span></div>
+        <h4 class="font-bold text-center text-black text-lg">สายโจมตี</h4><p class="text-xs text-gray-500 text-center mt-1 font-medium px-2">ชนดุดัน เป้าหมายคือทำลายล้างชิ้นส่วน</p>
+      </a>
+      <a href="beyblades.html?type=DEFENSE" class="bg-white border-[3px] border-black box-cut p-4 cursor-pointer hover:-translate-y-2 hover:shadow-[6px_6px_0_0_#3b82f6] transition-all group block">
+        <div class="bg-black text-white font-x text-4xl text-center pt-2 pb-1 slanted mb-4 mx-2 group-hover:scale-105 transition-transform"><span class="text-[#3b82f6] text-shadow-none">DEFENSE</span></div>
+        <h4 class="font-bold text-center text-black text-lg">สายป้องกัน</h4><p class="text-xs text-gray-500 text-center mt-1 font-medium px-2">ปักหลักกลางสนาม สะท้อนทุกการโจมตี</p>
+      </a>
+      <a href="beyblades.html?type=STAMINA" class="bg-white border-[3px] border-black box-cut p-4 cursor-pointer hover:-translate-y-2 hover:shadow-[6px_6px_0_0_#22c55e] transition-all group block">
+        <div class="bg-black text-white font-x text-4xl text-center pt-2 pb-1 slanted mb-4 mx-2 group-hover:scale-105 transition-transform"><span class="text-[#22c55e] text-shadow-none">STAMINA</span></div>
+        <h4 class="font-bold text-center text-black text-lg">สายทนทาน</h4><p class="text-xs text-gray-500 text-center mt-1 font-medium px-2">หมุนต่อเนื่องยาวนานเพื่อเอาชนะด้วยเวลา</p>
+      </a>
+      <a href="beyblades.html?type=BALANCE" class="bg-white border-[3px] border-black box-cut p-4 cursor-pointer hover:-translate-y-2 hover:shadow-[6px_6px_0_0_#a855f7] transition-all group block">
+        <div class="bg-black text-white font-x text-4xl text-center pt-2 pb-1 slanted mb-4 mx-2 group-hover:scale-105 transition-transform"><span class="text-[#a855f7] text-shadow-none">BALANCE</span></div>
+        <h4 class="font-bold text-center text-black text-lg">สายสมดุล</h4><p class="text-xs text-gray-500 text-center mt-1 font-medium px-2">ปรับแผนเปลี่ยนวิถีวิ่งได้ทุกสถานการณ์</p>
+      </a>
+    </div>
+
+    <div>
+      <div class="flex flex-col md:flex-row justify-between md:items-end gap-3 border-b-[3px] border-black pb-2 mb-6">
+        <h2 class="font-x text-4xl md:text-5xl italic text-shadow-none">LATEST <span class="c-x-red">BEYBLADES</span></h2>
+        <a href="beyblades.html" class="slanted bg-black text-white font-x text-lg px-5 pt-2 pb-1 hover:bg-x-green hover:text-black transition-colors">VIEW ALL →</a>
+      </div>
+      <div id="latest-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <a href="blade.html" class="bg-zinc-950 text-white box-cut p-6 border-l-8 border-x-green hover:-translate-y-1 transition-transform block">
+        <h3 class="font-x text-3xl text-shadow-none">BLADE</h3><p class="text-zinc-400 text-sm mt-1 font-bold">ใบมีดหลัก หัวใจของการต่อสู้</p>
+      </a>
+      <a href="ratchet.html" class="bg-zinc-950 text-white box-cut p-6 border-l-8 border-x-green hover:-translate-y-1 transition-transform block">
+        <h3 class="font-x text-3xl text-shadow-none">RATCHET</h3><p class="text-zinc-400 text-sm mt-1 font-bold">แกนกลาง กำหนดความสูงและแฉก</p>
+      </a>
+      <a href="bit.html" class="bg-zinc-950 text-white box-cut p-6 border-l-8 border-x-green hover:-translate-y-1 transition-transform block">
+        <h3 class="font-x text-3xl text-shadow-none">BIT</h3><p class="text-zinc-400 text-sm mt-1 font-bold">แกนหมุนล่างสุด กำหนดวิถีการวิ่ง</p>
+      </a>
+    </div>
+  </main>
+
+  <footer class="bg-black text-zinc-400 py-8 mt-16 border-t-8 border-x-red text-center">
+    <div class="font-x text-3xl text-white mb-2 italic text-shadow-none">XPARTS <span class="c-x-green">HUB</span></div>
+    <p class="text-[10px] font-bold">BEYBLADE X DATABASE &middot; EDUCATION PROJECT</p>
+  </footer>
+
+  <script src="store.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // Swap LOGIN -> ADMIN when already logged in.
+    XPartsAuth.me().then(function () {
+      var b = document.getElementById('nav-login');
+      if (b) { b.textContent = 'ADMIN'; b.href = 'admin.html'; }
+    }).catch(function () {});
+  </script>
+  <script src="catalog.js"></script>
+  <script>
+    window.XPartsDB.col('beys').all().then(function (rows) {
+      var g = document.getElementById('latest-grid');
+      g.innerHTML = rows.length
+        ? rows.slice(0, 4).map(function (x) { return window.XPartsDB.card(x, x.type); }).join('')
+        : window.XPartsDB.empty('ยังไม่มีข้อมูลเบย์เบลด — เพิ่มได้จากหน้า Admin');
+    });
+  </script>
+</body>
+</html>
