@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "name": "SPIN FINISH",
+    "type": "",
+    "weight": null,
+    "points": 1,
+    "image": "",
+    "description": "ยืนหยัดหมุนอยู่ในสนามได้นานกว่า จนเบย์เบลดของคู่ต่อสู้สูญเสียพลังงานและหยุดหมุนไปเอง"
+  },
+  {
+    "id": 2,
+    "name": "BURST FINISH",
+    "type": "",
+    "weight": null,
+    "points": 2,
+    "image": "",
+    "description": "โจมตีอย่างรุนแรงจนสลักล็อกหลุดออก ส่งผลให้ชิ้นส่วนเบย์เบลดแตกกระจายออกจากกัน"
+  },
+  {
+    "id": 3,
+    "name": "OVER FINISH",
+    "type": "",
+    "weight": null,
+    "points": 2,
+    "image": "",
+    "description": "กระแทกเบย์เบลดคู่ต่อสู้ให้กระเด็นหลุดออกไปตกใน Over Zone (ช่องว่างที่มุมสนาม)"
+  },
+  {
+    "id": 4,
+    "name": "XTREME FINISH",
+    "type": "",
+    "weight": null,
+    "points": 3,
+    "image": "",
+    "description": "ใช้ความเร็วจากราง Xtreme Line พุ่งชนคู่แข่งอย่างรุนแรงจนกระเด็นตก Xtreme Zone"
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "เจเนอเรชันที่ 4 ของ Beyblade",
+    "type": "",
+    "weight": null,
+    "points": null,
+    "image": "",
+    "description": "ต่อจากซีรีส์ Metal Fight (2008) และ Burst (2015) โดย Beyblade X ใช้ชิ้นส่วนและสนามรุ่นใหม่ที่ออกแบบมาสำหรับระบบ Xtreme Dash โดยเฉพาะ"
+  },
+  {
+    "id": 2,
+    "name": "โครงสร้างสนามแข่ง",
+    "type": "",
+    "weight": null,
+    "points": null,
+    "image": "",
+    "description": "สนามมาตรฐานคือ Xtreme Stadium ของ Takara Tomy (Hasbro เรียกว่า Tournament Beystadium) ประกอบด้วยฝาสนามที่มีช่องยิงวงกลม และตัวสนามที่เป็นพื้นให้เบย์ต่อสู้กัน"
+  },
+  {
+    "id": 3,
+    "name": "ราง Xtreme Line",
+    "type": "",
+    "weight": null,
+    "points": null,
+    "image": "",
+    "description": "รางเฟืองรอบพื้นสนามที่เป็นหัวใจของ Beyblade X เมื่อเฟืองด้านล่างของเบย์ขบกับรางจะเกิดการพุ่งเร่งความเร็วที่เรียกว่า Xtreme Dash จำนวนฟันเฟืองที่ต่างกันทำให้จังหวะและความถี่ของการพุ่งต่างกันไปด้วย"
+  }
+]

@@ -42,23 +42,7 @@
       <p class="font-bold text-zinc-400 mt-3 max-w-2xl">Beyblade X คือเจเนอเรชันที่ 4 ของลูกข่างต่อสู้ Beyblade เปิดตัวโดย Takara Tomy ในปี 2023 (มีเวอร์ชันวางจำหน่ายโดย Hasbro ด้วย) จุดเด่นคือสนามที่มีราง Xtreme Line และระบบ Xtreme Dash</p>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="bg-white border-[3px] border-black box-cut p-6 card-x">
-        <p class="font-x text-x-red text-xl">GENERATION 4</p>
-        <h3 class="font-x text-2xl mt-1">เจเนอเรชันที่ 4 ของ Beyblade</h3>
-        <p class="text-sm text-zinc-600 mt-2">ต่อจากซีรีส์ Metal Fight (2008) และ Burst (2015) โดย Beyblade X ใช้ชิ้นส่วนและสนามรุ่นใหม่ที่ออกแบบมาสำหรับระบบ Xtreme Dash โดยเฉพาะ</p>
-      </div>
-      <div class="bg-white border-[3px] border-black box-cut p-6 card-x">
-        <p class="font-x text-x-red text-xl">STADIUM</p>
-        <h3 class="font-x text-2xl mt-1">โครงสร้างสนามแข่ง</h3>
-        <p class="text-sm text-zinc-600 mt-2">สนามมาตรฐานคือ Xtreme Stadium ของ Takara Tomy (Hasbro เรียกว่า Tournament Beystadium) ประกอบด้วยฝาสนามที่มีช่องยิงวงกลม และตัวสนามที่เป็นพื้นให้เบย์ต่อสู้กัน</p>
-      </div>
-      <div class="bg-white border-[3px] border-black box-cut p-6 card-x">
-        <p class="font-x text-x-red text-xl">XTREME LINE</p>
-        <h3 class="font-x text-2xl mt-1">ราง Xtreme Line</h3>
-        <p class="text-sm text-zinc-600 mt-2">รางเฟืองรอบพื้นสนามที่เป็นหัวใจของ Beyblade X เมื่อเฟืองด้านล่างของเบย์ขบกับรางจะเกิดการพุ่งเร่งความเร็วที่เรียกว่า Xtreme Dash จำนวนฟันเฟืองที่ต่างกันทำให้จังหวะและความถี่ของการพุ่งต่างกันไปด้วย</p>
-      </div>
-    </div>
+    <div id="about-grid" class="grid md:grid-cols-3 gap-6"></div>
 
     <div class="bg-zinc-950 text-white box-cut p-8 grid md:grid-cols-2 gap-8 items-center">
       <div>
@@ -130,6 +114,23 @@
       var b = document.getElementById('nav-login');
       if (b) { b.textContent = 'ADMIN'; b.href = 'admin.html'; }
     }).catch(function () {});
+  </script>
+  <script>
+    (function () {
+      var grid = document.getElementById('about-grid');
+      var esc = window.XPartsDB.esc;
+      function render() {
+        window.XPartsDB.col('about').all().then(function (rows) {
+          grid.innerHTML = rows.length ? rows.map(function (x) {
+            return '<div class="bg-white border-[3px] border-black box-cut p-6 card-x">' +
+              '<h3 class="font-x text-2xl mt-1">' + esc(x.name) + '</h3>' +
+              '<p class="text-sm text-zinc-600 mt-2">' + esc(x.description || '') + '</p></div>';
+          }).join('') : window.XPartsDB.empty('ยังไม่มีข้อมูล — เพิ่มได้จากหน้า Admin');
+        });
+      }
+      render();
+      window.addEventListener('xparts:changed', render);
+    })();
   </script>
   
 </body>

@@ -42,28 +42,7 @@
       <p class="font-bold text-white bg-black inline-block px-4 py-1 box-cut mt-2">กติกาการแข่งขันระดับโปรลีก (ทีมใดสะสมครบ 4 คะแนนก่อนคือผู้ชนะ)</p>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-6">
-      <div class="bg-white border-[3px] border-black box-cut p-6 card-x">
-        <div class="flex justify-between items-start"><h3 class="font-x text-3xl">SPIN FINISH</h3><span class="bg-black text-x-green font-x text-xl px-3 py-1">1P</span></div>
-        <p class="font-bold text-zinc-800 mt-1">ชนะด้วยการหมุน</p>
-        <p class="text-sm text-zinc-600 mt-2">ยืนหยัดหมุนอยู่ในสนามได้นานกว่า จนเบย์เบลดของคู่ต่อสู้สูญเสียพลังงานและหยุดหมุนไปเอง</p>
-      </div>
-      <div class="bg-white border-[3px] border-black box-cut p-6 card-x">
-        <div class="flex justify-between items-start"><h3 class="font-x text-3xl">BURST FINISH</h3><span class="bg-black text-x-green font-x text-xl px-3 py-1">2P</span></div>
-        <p class="font-bold text-zinc-800 mt-1">ชนะด้วยการทำลาย</p>
-        <p class="text-sm text-zinc-600 mt-2">โจมตีอย่างรุนแรงจนสลักล็อกหลุดออก ส่งผลให้ชิ้นส่วนเบย์เบลดแตกกระจายออกจากกัน</p>
-      </div>
-      <div class="bg-white border-[3px] border-black box-cut p-6 card-x">
-        <div class="flex justify-between items-start"><h3 class="font-x text-3xl">OVER FINISH</h3><span class="bg-black text-x-green font-x text-xl px-3 py-1">2P</span></div>
-        <p class="font-bold text-zinc-800 mt-1">ชนะด้วยการชนตกสนาม</p>
-        <p class="text-sm text-zinc-600 mt-2">กระแทกเบย์เบลดคู่ต่อสู้ให้กระเด็นหลุดออกไปตกใน <strong>Over Zone</strong> (ช่องว่างที่มุมสนาม)</p>
-      </div>
-      <div class="bg-zinc-950 text-white border-[3px] border-black box-cut p-6 card-x">
-        <div class="flex justify-between items-start"><h3 class="font-x text-3xl c-x-green text-shadow-none">XTREME FINISH</h3><span class="bg-x-green text-black font-x text-xl px-3 py-1">3P</span></div>
-        <p class="font-bold mt-1">ชัยชนะขั้นสูงสุด!</p>
-        <p class="text-sm text-zinc-400 mt-2">ใช้ความเร็วจากราง Xtreme Line พุ่งชนคู่แข่งอย่างรุนแรงจนกระเด็นตก <strong class="c-x-green">Xtreme Zone</strong></p>
-      </div>
-    </div>
+    <div id="rules-grid" class="grid md:grid-cols-2 gap-6"></div>
 
     <div class="bg-zinc-950 text-white box-cut p-8">
       <h3 class="font-x text-4xl text-shadow-none mb-6 text-center">THE XTREME <span class="c-x-red">STADIUM</span> ZONES</h3>
@@ -107,6 +86,25 @@
       if (b) { b.textContent = 'ADMIN'; b.href = 'admin.html'; }
     }).catch(function () {});
   </script>
-  
+  <script>
+    (function () {
+      var grid = document.getElementById('rules-grid');
+      var esc = window.XPartsDB.esc;
+      function render() {
+        window.XPartsDB.col('rules').all().then(function (rows) {
+          grid.innerHTML = rows.length ? rows.map(function (x) {
+            return '<div class="bg-white border-[3px] border-black box-cut overflow-hidden card-x">' +
+              (x.image ? '<img src="' + esc(x.image) + '" class="w-full h-40 object-cover" onerror="this.style.display=\'none\'">' : '') +
+              '<div class="p-6"><div class="flex justify-between items-start gap-3">' +
+              '<h3 class="font-x text-3xl">' + esc(x.name) + '</h3>' +
+              (x.points ? '<span class="bg-black text-x-green font-x text-xl px-3 py-1 whitespace-nowrap">' + esc(x.points) + 'P</span>' : '') +
+              '</div><p class="text-sm text-zinc-600 mt-2">' + esc(x.description || '') + '</p></div></div>';
+          }).join('') : window.XPartsDB.empty('ยังไม่มีข้อมูลกติกา — เพิ่มได้จากหน้า Admin');
+        });
+      }
+      render();
+      window.addEventListener('xparts:changed', render);
+    })();
+  </script>
 </body>
 </html>

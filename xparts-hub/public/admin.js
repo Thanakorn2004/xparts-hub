@@ -6,7 +6,9 @@
     { col: 'blades', label: 'BLADE', kind: 'full', hint: 'เช่น Dran Sword' },
     { col: 'ratchets', label: 'RATCHET', kind: 'basic', hint: 'เช่น 3-60' },
     { col: 'bits', label: 'BIT', kind: 'basic', hint: 'เช่น F (Flat)' },
-    { col: 'categories', label: 'CATEGORY', kind: 'name', hint: 'เช่น ATTACK' }
+    { col: 'categories', label: 'CATEGORY', kind: 'name', hint: 'เช่น ATTACK' },
+    { col: 'rules', label: 'RULES', kind: 'rules', hint: 'เช่น Spin Finish' },
+    { col: 'about', label: 'ABOUT', kind: 'about', hint: 'เช่น เจเนอเรชันที่ 4' }
   ];
   var current = SECTIONS[0];
   var typeOptions = ['ATTACK', 'DEFENSE', 'STAMINA', 'BALANCE'];
@@ -22,38 +24,62 @@
     }).join('');
   }
 
+  /* ---- fields shown in the add/edit form, per section kind ---- */
   function formHtml(s) {
     var f = '<label class="block font-bold text-sm">ชื่อ<input name="name" required maxlength="80" class="field mt-1 w-full border-2 border-black p-3" placeholder="' + esc(s.hint) + '"></label>';
+
     if (s.kind === 'full') {
       f += '<label class="block font-bold text-sm">ประเภท<select name="type" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
         typeOptions.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('') + '</select></label>';
     }
+    if (s.kind === 'rules') {
+      f += '<label class="block font-bold text-sm">คะแนน (Point)<input name="points" type="number" min="1" max="5" class="field mt-1 w-full border-2 border-black p-3" placeholder="1"></label>';
+    }
+    if (s.kind === 'full' || s.kind === 'basic') {
+      f += '<label class="block font-bold text-sm">น้ำหนัก (g)<input name="weight" type="number" min="0" step="0.01" class="field mt-1 w-full border-2 border-black p-3" placeholder="35.2"></label>';
+    }
+    if (s.kind === 'full' || s.kind === 'basic' || s.kind === 'rules') {
+      f += '<label class="block font-bold text-sm">URL รูปภาพ' + (s.kind === 'rules' ? ' (จำเป็น - ต้องเป็นลิงก์รูปที่ใช้งานได้จริง)' : '') +
+        '<input name="image" type="url" ' + (s.kind === 'rules' ? 'required ' : '') +
+        'class="field mt-1 w-full border-2 border-black p-3" placeholder="https://..."></label>';
+    }
     if (s.kind !== 'name') {
-      f += '<label class="block font-bold text-sm">น้ำหนัก (g)<input name="weight" type="number" min="0" step="0.01" class="field mt-1 w-full border-2 border-black p-3" placeholder="35.2"></label>' +
-        '<label class="block font-bold text-sm">URL รูปภาพ<input name="image" type="url" class="field mt-1 w-full border-2 border-black p-3" placeholder="https://..."></label>' +
-        '<label class="block font-bold text-sm">รายละเอียด<textarea name="description" rows="3" maxlength="500" class="field mt-1 w-full border-2 border-black p-3"></textarea></label>';
+      f += '<label class="block font-bold text-sm">' + (s.kind === 'about' ? 'เนื้อหา (ข้อความ)' : 'รายละเอียด') +
+        '<textarea name="description" rows="' + (s.kind === 'about' ? 5 : 3) + '" maxlength="' + (s.kind === 'about' ? 800 : 500) + '" ' +
+        (s.kind === 'about' ? 'required ' : '') + 'class="field mt-1 w-full border-2 border-black p-3"></textarea></label>';
     }
     return f;
   }
 
+  /* ---- table columns, per kind (NAME and ACTION are always present) ---- */
+  function extraHeaders(s) {
+    if (s.kind === 'full') return ['TYPE', 'WEIGHT'];
+    if (s.kind === 'basic') return ['WEIGHT'];
+    if (s.kind === 'rules') return ['POINTS'];
+    return []; // name, about
+  }
+  function nameCell(s, x) {
+    if (s.kind === 'name') return '<strong>' + esc(x.name) + '</strong>';
+    if (s.kind === 'about') return '<div><strong>' + esc(x.name) + '</strong><p class="text-xs text-zinc-500 max-w-md truncate">' + esc(x.description || '-') + '</p></div>';
+    return '<div class="flex items-center gap-3"><img class="thumb border-2 border-black" src="' + esc(x.image || window.XPartsDB.placeholder) + '" onerror="this.src=window.XPartsDB.placeholder">' +
+      '<div><strong>' + esc(x.name) + '</strong><p class="text-xs text-zinc-500 max-w-xs truncate">' + esc(x.description || '-') + '</p></div></div>';
+  }
+  function extraCells(s, x) {
+    if (s.kind === 'full') return ['<span class="bg-black text-x-green px-3 py-1 text-xs font-bold">' + esc(x.type || '-') + '</span>', esc(x.weight || '-') + (x.weight ? ' g' : '')];
+    if (s.kind === 'basic') return [esc(x.weight || '-') + (x.weight ? ' g' : '')];
+    if (s.kind === 'rules') return [esc(x.points || '-') + (x.points ? 'P' : '')];
+    return [];
+  }
   function rowHtml(s, x) {
-    var h = '<tr class="border-b-2 border-zinc-200"><td class="p-4">';
-    if (s.kind !== 'name') {
-      h += '<div class="flex items-center gap-3"><img class="thumb border-2 border-black" src="' + esc(x.image || window.XPartsDB.placeholder) + '" onerror="this.src=window.XPartsDB.placeholder">' +
-        '<div><strong>' + esc(x.name) + '</strong><p class="text-xs text-zinc-500 max-w-xs truncate">' + esc(x.description || '-') + '</p></div></div>';
-    } else {
-      h += '<strong>' + esc(x.name) + '</strong>';
-    }
-    h += '</td>';
-    if (s.kind === 'full') h += '<td class="p-4"><span class="bg-black text-x-green px-3 py-1 text-xs font-bold">' + esc(x.type || '-') + '</span></td>';
-    if (s.kind !== 'name') h += '<td class="p-4 font-bold">' + esc(x.weight || '-') + (x.weight ? ' g' : '') + '</td>';
-    h += '<td class="p-4"><button data-delete="' + x.id + '" class="bg-red-600 text-white border-2 border-black px-4 py-2 font-bold hover:bg-black">DELETE</button></td></tr>';
-    return h;
+    var cells = [nameCell(s, x)].concat(extraCells(s, x));
+    return '<tr class="border-b-2 border-zinc-200">' + cells.map(function (c) { return '<td class="p-4">' + c + '</td>'; }).join('') +
+      '<td class="p-4"><button data-delete="' + x.id + '" class="bg-red-600 text-white border-2 border-black px-4 py-2 font-bold hover:bg-black">DELETE</button></td></tr>';
   }
 
   function drawSection() {
     var s = current;
-    var cols = 2 + (s.kind === 'full' ? 1 : 0) + (s.kind !== 'name' ? 1 : 0);
+    var extra = extraHeaders(s);
+    var cols = 2 + extra.length;
     root.innerHTML =
       '<div class="grid lg:grid-cols-[380px_minmax(0,1fr)] gap-7 items-start">' +
       '<section class="bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#caff04] p-6">' +
@@ -66,9 +92,7 @@
       '<button id="delete-all" class="hidden bg-red-600 text-white px-4 py-2 border-2 border-black font-bold">ลบทั้งหมด</button></div>' +
       '<div class="overflow-x-auto bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#09090b]">' +
       '<table class="w-full text-left" style="min-width:640px"><thead class="bg-black text-white font-x text-lg"><tr>' +
-      '<th class="p-4">NAME</th>' +
-      (s.kind === 'full' ? '<th class="p-4">TYPE</th>' : '') +
-      (s.kind !== 'name' ? '<th class="p-4">WEIGHT</th>' : '') +
+      '<th class="p-4">NAME</th>' + extra.map(function (l) { return '<th class="p-4">' + l + '</th>'; }).join('') +
       '<th class="p-4">ACTION</th></tr></thead><tbody id="rows"></tbody></table></div></section></div>';
 
     var form = document.getElementById('add-form');
