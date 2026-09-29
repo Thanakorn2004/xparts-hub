@@ -37,8 +37,12 @@
         </label>
         <label class="block">
           <span class="text-xs text-zinc-400 tracking-widest font-bold">PASSWORD</span>
-          <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••"
-                 class="login-input w-full bg-black border-2 border-zinc-700 text-white px-4 py-3 box-cut-small mt-1">
+          <div class="relative mt-1">
+            <input type="password" name="password" id="login-password" required autocomplete="current-password" placeholder="••••••••"
+                   class="login-input w-full bg-black border-2 border-zinc-700 text-white px-4 py-3 pr-12 box-cut-small">
+            <button type="button" id="toggle-login-password" aria-label="แสดงรหัสผ่าน"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-xl leading-none">👁️</button>
+          </div>
         </label>
         <button type="submit" class="w-full bg-x-green text-black font-x text-2xl py-3 box-cut-small hover:bg-white transition-colors">LOGIN →</button>
       </form>
@@ -61,6 +65,14 @@
         XPartsAuth.login(form.email.value, form.password.value)
           .then(function () { location.href = 'admin.html'; })
           .catch(function (err) { errBox.textContent = err.message || 'เข้าสู่ระบบไม่สำเร็จ'; errBox.classList.remove('hidden'); });
+      });
+      var pwInput = document.getElementById('login-password');
+      var pwToggle = document.getElementById('toggle-login-password');
+      pwToggle.addEventListener('click', function () {
+        var showing = pwInput.type === 'text';
+        pwInput.type = showing ? 'password' : 'text';
+        pwToggle.textContent = showing ? '👁️' : '🙈';
+        pwToggle.setAttribute('aria-label', showing ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน');
       });
     })();
   </script>

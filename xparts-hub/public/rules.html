@@ -39,10 +39,10 @@
     <div class="text-center">
       <p class="text-xs tracking-[4px] text-zinc-500 font-bold">HOW TO PLAY</p>
       <h1 class="font-x text-5xl md:text-7xl italic text-shadow-none">BATTLE <span class="c-x-red">RULES</span></h1>
-      <p class="font-bold text-white bg-black inline-block px-4 py-1 box-cut mt-2">กติกาการแข่งขันระดับโปรลีก (ทีมใดสะสมครบ 4 คะแนนก่อนคือผู้ชนะ)</p>
     </div>
 
-    <div id="rules-grid" class="grid md:grid-cols-2 gap-6"></div>
+    <!-- Admin-managed content blocks: each is a banner + its own set of finish-type cards -->
+    <div id="rules-sections" class="space-y-12"></div>
 
     <div class="bg-zinc-950 text-white box-cut p-8">
       <h3 class="font-x text-4xl text-shadow-none mb-6 text-center">THE XTREME <span class="c-x-red">STADIUM</span> ZONES</h3>
@@ -88,18 +88,31 @@
   </script>
   <script>
     (function () {
-      var grid = document.getElementById('rules-grid');
+      var wrap = document.getElementById('rules-sections');
       var esc = window.XPartsDB.esc;
       function render() {
-        window.XPartsDB.col('rules').all().then(function (rows) {
-          grid.innerHTML = rows.length ? rows.map(function (x) {
-            return '<div class="bg-white border-[3px] border-black box-cut overflow-hidden card-x">' +
-              (x.image ? '<img src="' + esc(x.image) + '" class="w-full h-40 object-cover" onerror="this.style.display=\'none\'">' : '') +
-              '<div class="p-6"><div class="flex justify-between items-start gap-3">' +
-              '<h3 class="font-x text-3xl">' + esc(x.name) + '</h3>' +
-              (x.points ? '<span class="bg-black text-x-green font-x text-xl px-3 py-1 whitespace-nowrap">' + esc(x.points) + 'P</span>' : '') +
-              '</div><p class="text-sm text-zinc-600 mt-2">' + esc(x.description || '') + '</p></div></div>';
-          }).join('') : window.XPartsDB.empty('ยังไม่มีข้อมูลกติกา — เพิ่มได้จากหน้า Admin');
+        Promise.all([
+          window.XPartsDB.col('rules_sections').all(),
+          window.XPartsDB.col('rules_cards').all()
+        ]).then(function (r) {
+          var sections = r[0], cards = r[1];
+          if (!sections.length) { wrap.innerHTML = window.XPartsDB.empty('ยังไม่มีข้อมูลกติกา — เพิ่มได้จากหน้า Admin'); return; }
+          wrap.innerHTML = sections.slice().reverse().map(function (sec) {
+            var secCards = cards.filter(function (c) { return String(c.sectionId) === String(sec.id); });
+            return '<div class="space-y-6">' +
+              '<div class="box-cut bg-zinc-950 text-white px-6 py-4 border-l-8 border-x-green">' +
+              '<h2 class="font-x text-3xl md:text-4xl text-shadow-none">' + esc(sec.name) + '</h2></div>' +
+              '<div class="grid md:grid-cols-2 gap-6">' +
+              (secCards.length ? secCards.map(function (c) {
+                return '<div class="bg-white border-[3px] border-black box-cut overflow-hidden card-x">' +
+                  (c.image ? '<img src="' + esc(c.image) + '" class="w-full h-40 object-cover" onerror="this.style.display=\'none\'">' : '') +
+                  '<div class="p-6"><div class="flex justify-between items-start gap-3">' +
+                  '<h3 class="font-x text-3xl">' + esc(c.name) + '</h3>' +
+                  (c.points ? '<span class="bg-black text-x-green font-x text-xl px-3 py-1 whitespace-nowrap">' + esc(c.points) + 'P</span>' : '') +
+                  '</div><p class="text-sm text-zinc-600 mt-2">' + esc(c.description || '') + '</p></div></div>';
+              }).join('') : '<p class="text-sm text-zinc-500 col-span-full">ยังไม่มีการ์ดในหมวดนี้ — เพิ่มได้จากหน้า Admin</p>') +
+              '</div></div>';
+          }).join('');
         });
       }
       render();

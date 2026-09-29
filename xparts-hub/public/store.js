@@ -10,13 +10,18 @@ window.XPartsDB = (function () {
   function fire() { window.dispatchEvent(new Event('xparts:changed')); }
   function sortDesc(rows) { return rows.slice().sort(function (a, b) { return Number(b.id) - Number(a.id); }); }
   function normalize(d) {
-    return {
+    var out = {
       name: String(d.name || '').trim(),
       type: d.type ? String(d.type).toUpperCase() : '',
       weight: d.weight === '' || d.weight == null ? null : Number(d.weight),
       image: d.image || '',
       description: String(d.description || '').trim()
     };
+    // Pass these through only when the caller actually supplied them, so
+    // collections that don't use them (beys, blades, categories...) stay clean.
+    if (d.points !== undefined) out.points = d.points === '' || d.points == null ? null : Number(d.points);
+    if (d.sectionId !== undefined) out.sectionId = d.sectionId === '' || d.sectionId == null ? null : Number(d.sectionId);
+    return out;
   }
 
   function col(name) {

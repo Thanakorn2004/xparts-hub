@@ -1,13 +1,16 @@
-// XParts Hub backend - Express + JSON file storage + login auth.
+// XParts Hub backend - Express + JSON file storage + login auth + image uploads.
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const USERS_FILE = path.join(__dirname, 'users.json');
+const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // Collections stored as JSON files next to server.js
 const COLLECTIONS = {
@@ -16,9 +19,14 @@ const COLLECTIONS = {
   ratchets: 'ratchets.json',
   bits: 'bits.json',
   categories: 'categories.json',
-  rules: 'rules.json',
-  about: 'about.json'
+  rules_sections: 'rules_sections.json',   // banner blocks on the rules page
+  rules_cards: 'rules_cards.json',         // finish-type cards, each belongs to a section (sectionId) - image required
+  about_sections: 'about_sections.json',   // banner blocks on the about page
+  about_cards: 'about_cards.json'          // title+content cards, each belongs to a section (sectionId) - image optional
 };
+// Collections whose cards require sectionId + belong to a "sections" collection
+const BLOCK_CARD_COLS = { rules_cards: 'rules_sections', about_cards: 'about_sections' };
+const BLOCK_SECTION_COLS = { rules_sections: 'rules_cards', about_sections: 'about_cards' };
 
 const SECRET = process.env.SESSION_SECRET || 'change-me-xparts-secret';
 const SESSION_HOURS = 8;
@@ -54,11 +62,12 @@ function readUsers() {
   try { const v = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); return Array.isArray(v) ? v : []; }
   catch (e) { return []; }
 }
+function writeUsers(rows) { fs.writeFileSync(USERS_FILE, JSON.stringify(rows, null, 2)); }
 (function seedAdmin() {
   if (readUsers().length === 0) {
     const email = (process.env.ADMIN_EMAIL || 'admin@example.com').toLowerCase();
     const pass = process.env.ADMIN_PASSWORD || 'admin1234';
-    fs.writeFileSync(USERS_FILE, JSON.stringify([{ email: email, password: hashPassword(pass) }], null, 2));
+    writeUsers([{ email: email, password: hashPassword(pass) }]);
     console.log('Seeded default admin -> ' + email + ' / ' + pass + '  (change ASAP)');
   }
 })();
@@ -108,6 +117,45 @@ app.get('/api/me', (req, res) => {
   res.json({ email: s.email });
 });
 
+/* ---------- admin account management (must already be logged in) ---------- */
+app.get('/api/admins', requireAuth, (req, res) => {
+  res.json(readUsers().map(u => ({ email: u.email })));
+});
+app.post('/api/admins', requireAuth, (req, res) => {
+  const email = String((req.body && req.body.email) || '').toLowerCase().trim();
+  const password = String((req.body && req.body.password) || '');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'อีเมลไม่ถูกต้อง' });
+  if (password.length < 6) return res.status(400).json({ error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' });
+  const users = readUsers();
+  if (users.some(u => u.email === email)) return res.status(400).json({ error: 'อีเมลนี้เป็นแอดมินอยู่แล้ว' });
+  users.push({ email: email, password: hashPassword(password) });
+  writeUsers(users);
+  res.status(201).json({ email: email });
+});
+
+/* ---------- image upload (admin only) ---------- */
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase().slice(0, 10);
+      cb(null, Date.now() + '-' + Math.round(Math.random() * 1e9) + ext);
+    }
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    if (/^image\//.test(file.mimetype)) cb(null, true);
+    else cb(new Error('อนุญาตเฉพาะไฟล์รูปภาพเท่านั้น'));
+  }
+});
+app.post('/api/upload', requireAuth, (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message || 'อัปโหลดไม่สำเร็จ' });
+    if (!req.file) return res.status(400).json({ error: 'ไม่พบไฟล์ที่อัปโหลด' });
+    res.status(201).json({ url: '/uploads/' + req.file.filename });
+  });
+});
+
 /* ---------- generic collection CRUD (reads public, writes protected) ---------- */
 function validCol(req, res, next) {
   if (!COLLECTIONS[req.params.col]) return res.status(404).json({ error: 'unknown collection' });
@@ -117,17 +165,19 @@ app.get('/api/:col', validCol, (req, res) => res.json(readCol(req.params.col)));
 
 app.post('/api/:col', validCol, requireAuth, (req, res) => {
   const b = req.body || {};
+  const col = req.params.col;
   const name = String(b.name || '').trim();
   if (!name) return res.status(400).json({ error: 'name is required' });
-  // rules entries must ship with a live image URL
-  if (req.params.col === 'rules' && !String(b.image || '').trim()) {
-    return res.status(400).json({ error: 'image is required for rules' });
+  if (col === 'rules_cards' && !String(b.image || '').trim()) {
+    return res.status(400).json({ error: 'image is required for rules cards' });
   }
-  // about entries are text-only content blocks
-  if (req.params.col === 'about' && !String(b.description || '').trim()) {
-    return res.status(400).json({ error: 'description is required for about content' });
+  if (BLOCK_CARD_COLS[col]) {
+    if (col === 'about_cards' && !String(b.description || '').trim()) {
+      return res.status(400).json({ error: 'description is required for about cards' });
+    }
+    if (b.sectionId == null || b.sectionId === '') return res.status(400).json({ error: 'sectionId is required' });
   }
-  const rows = readCol(req.params.col);
+  const rows = readCol(col);
   const rec = {
     id: Date.now(),
     name: name,
@@ -136,18 +186,29 @@ app.post('/api/:col', validCol, requireAuth, (req, res) => {
     points: b.points === '' || b.points == null ? null : Number(b.points),
     image: b.image || '',
     description: String(b.description || '').trim(),
+    sectionId: b.sectionId === '' || b.sectionId == null ? null : Number(b.sectionId),
     createdAt: new Date().toISOString()
   };
   rows.push(rec);
-  writeCol(req.params.col, rows);
+  writeCol(col, rows);
   res.status(201).json(rec);
 });
 
 app.delete('/api/:col/:id', validCol, requireAuth, (req, res) => {
-  writeCol(req.params.col, readCol(req.params.col).filter(x => String(x.id) !== String(req.params.id)));
+  const col = req.params.col;
+  writeCol(col, readCol(col).filter(x => String(x.id) !== String(req.params.id)));
+  // deleting a "section" (banner block) cascades to its cards
+  if (BLOCK_SECTION_COLS[col]) {
+    const cardCol = BLOCK_SECTION_COLS[col];
+    writeCol(cardCol, readCol(cardCol).filter(x => String(x.sectionId) !== String(req.params.id)));
+  }
   res.json({ ok: true });
 });
-app.delete('/api/:col', validCol, requireAuth, (req, res) => { writeCol(req.params.col, []); res.json({ ok: true }); });
+app.delete('/api/:col', validCol, requireAuth, (req, res) => {
+  writeCol(req.params.col, []);
+  if (BLOCK_SECTION_COLS[req.params.col]) writeCol(BLOCK_SECTION_COLS[req.params.col], []);
+  res.json({ ok: true });
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`XParts Hub running on port ${PORT}`);
