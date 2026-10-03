@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "name": "ATTACK"
+  },
+  {
+    "id": 2,
+    "name": "DEFENSE"
+  },
+  {
+    "id": 3,
+    "name": "STAMINA"
+  },
+  {
+    "id": 4,
+    "name": "BALANCE"
+  }
+]

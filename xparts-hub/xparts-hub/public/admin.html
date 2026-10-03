@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Admin | XParts Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { 'x-green': '#caff04', 'x-red': '#ff003c' } } } };
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .thumb { width:58px; height:58px; object-fit:cover; }
+  </style>
+</head>
+<body class="bg-halftone min-h-screen pb-20">
+  <header class="bg-zinc-950 border-b-4 border-x-green sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+      <a href="index.html" class="font-x text-4xl italic font-bold"><span class="text-white">XPARTS</span><span class="c-x-green ml-1">HUB</span></a>
+      <nav class="flex gap-2 items-center">
+        <a href="index.html" class="slanted bg-zinc-800 text-white font-x text-xl px-5 pt-2 pb-1 border-2 border-transparent hover:bg-zinc-700">HOME</a>
+        <span class="slanted bg-x-green text-black font-x text-xl px-5 pt-2 pb-1 border-2 border-black">ADMIN PANEL</span>
+        <a href="#" id="logout-btn" class="slanted bg-x-red text-white font-x text-xl px-5 pt-2 pb-1 border-2 border-black hover:bg-black">LOGOUT</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 mt-8 max-w-6xl space-y-8">
+    <section class="box-cut bg-zinc-950 text-white p-7 md:p-10 border-l-8 border-x-green">
+      <p class="text-xs tracking-[4px] text-zinc-500">XPARTS MANAGEMENT SYSTEM</p>
+      <h1 class="font-x text-5xl md:text-7xl italic">DATABASE <span class="c-x-green">MANAGER</span></h1>
+      <p class="text-zinc-400 font-bold">จัดการข้อมูลเบย์เบลด ชิ้นส่วน และหมวดหมู่ที่จะแสดงบนหน้าเว็บ</p>
+      <p class="text-xs text-zinc-500 mt-3">STORAGE: <span id="storage-mode" class="text-x-green font-bold"></span> &middot; USER: <span id="current-user" class="text-x-green font-bold">-</span></p>
+    </section>
+
+    <div id="admin-tabs" class="flex flex-wrap gap-2"></div>
+    <div id="admin-root"></div>
+  </main>
+
+  <script src="auth.js"></script>
+  <script src="store.js"></script>
+  <script>
+    XPartsAuth.guard().then(function (u) {
+      document.getElementById('current-user').textContent = u.email || 'admin';
+    });
+    document.getElementById('storage-mode').textContent =
+      (location.protocol === 'http:' || location.protocol === 'https:') ? 'SERVER (JSON files)' : 'LOCAL (เบราว์เซอร์นี้เท่านั้น)';
+    document.getElementById('logout-btn').addEventListener('click', function (e) {
+      e.preventDefault();
+      XPartsAuth.logout().then(function () { location.href = 'login.html'; });
+    });
+  </script>
+  <script src="admin.js"></script>
+</body>
+</html>

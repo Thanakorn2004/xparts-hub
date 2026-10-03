@@ -1,0 +1,42 @@
+[
+  {
+    "id": 201,
+    "name": "Dran Sword",
+    "type": "ATTACK",
+    "weight": null,
+    "image": "",
+    "description": "ใบมีดทรงดาบ 3 แฉก จุดเด่นคือแรงปะทะจากการพุ่งชน"
+  },
+  {
+    "id": 202,
+    "name": "Hells Scythe",
+    "type": "BALANCE",
+    "weight": null,
+    "image": "",
+    "description": "ใบมีดทรงเคียว สมดุลระหว่างโจมตีและทนทาน"
+  },
+  {
+    "id": 203,
+    "name": "Wizard Arrow",
+    "type": "STAMINA",
+    "weight": null,
+    "image": "",
+    "description": "ใบมีดทรงกลมลื่นไหล ลดแรงปะทะ เก็บแรงหมุนได้ยาวนาน"
+  },
+  {
+    "id": 204,
+    "name": "Knight Shield",
+    "type": "DEFENSE",
+    "weight": null,
+    "image": "",
+    "description": "ใบมีดทรงโล่ กระจายแรงกระแทกรอบทิศทาง"
+  },
+  {
+    "id": 205,
+    "name": "Phoenix Wing",
+    "type": "ATTACK",
+    "weight": null,
+    "image": "",
+    "description": "ใบมีดปีกนกขนาดใหญ่ น้ำหนักมาก แรงชนสูง"
+  }
+]

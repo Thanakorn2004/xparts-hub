@@ -1,0 +1,50 @@
+[
+  {
+    "id": 401,
+    "name": "F (Flat)",
+    "type": "",
+    "weight": null,
+    "image": "",
+    "description": "ปลายแบน วิ่งเร็วติดราง Xtreme Line — หัวใจของสายโจมตี"
+  },
+  {
+    "id": 402,
+    "name": "B (Ball)",
+    "type": "",
+    "weight": null,
+    "image": "",
+    "description": "ปลายทรงกลม แรงเสียดทานต่ำ หมุนนาน — เหมาะสายทนทาน"
+  },
+  {
+    "id": 403,
+    "name": "N (Needle)",
+    "type": "",
+    "weight": null,
+    "image": "",
+    "description": "ปลายเข็ม ยึดตำแหน่งกลางสนาม — เหมาะสายป้องกัน"
+  },
+  {
+    "id": 404,
+    "name": "T (Taper)",
+    "type": "",
+    "weight": null,
+    "image": "",
+    "description": "ปลายกรวย กึ่งวิ่งกึ่งปักหลัก — เหมาะสายสมดุล"
+  },
+  {
+    "id": 405,
+    "name": "R (Rush)",
+    "type": "",
+    "weight": null,
+    "image": "",
+    "description": "ปลายแบนพิเศษ เร่งความเร็วแรงกว่า Flat"
+  },
+  {
+    "id": 406,
+    "name": "GF (Gear Flat)",
+    "type": "",
+    "weight": null,
+    "image": "",
+    "description": "ปลายแบนพร้อมเฟือง ขบรางแล้วพุ่งด้วยพลังเต็มสูบ"
+  }
+]
