@@ -8,6 +8,10 @@ const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+// Bump this string whenever server.js changes - lets you confirm from the
+// browser (GET /api/version) that the file actually running on Render is
+// the one you just uploaded, instead of guessing after a restart.
+const APP_VERSION = '2026-10-05.1-admin-roles-protected-account';
 const USERS_FILE = path.join(__dirname, 'users.json');
 // The original seeded account: can't be deleted by anyone, and no one but
 // this account itself can view its password (everything else about it -
@@ -321,6 +325,8 @@ app.delete('/api/:col', validCol, requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/version', (req, res) => res.json({ version: APP_VERSION }));
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`XParts Hub running on port ${PORT}`);
+  console.log(`XParts Hub running on port ${PORT} - version ${APP_VERSION}`);
 });

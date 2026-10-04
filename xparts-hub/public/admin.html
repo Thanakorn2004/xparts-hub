@@ -31,6 +31,7 @@
       <h1 class="font-x text-5xl md:text-7xl italic">DATABASE <span class="c-x-green">MANAGER</span></h1>
       <p class="text-zinc-400 font-bold">จัดการข้อมูลเบย์เบลด ชิ้นส่วน และหมวดหมู่ที่จะแสดงบนหน้าเว็บ</p>
       <p class="text-xs text-zinc-500 mt-3">STORAGE: <span id="storage-mode" class="text-x-green font-bold"></span> &middot; USER: <span id="current-user" class="text-x-green font-bold">-</span></p>
+      <p class="text-[10px] text-zinc-600 mt-1">SERVER VERSION: <span id="server-version">-</span></p>
     </section>
 
     <div id="admin-tabs" class="flex flex-wrap gap-2"></div>
@@ -45,6 +46,13 @@
     });
     document.getElementById('storage-mode').textContent =
       (location.protocol === 'http:' || location.protocol === 'https:') ? 'SERVER (JSON files)' : 'LOCAL (เบราว์เซอร์นี้เท่านั้น)';
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      fetch('/api/version').then(function (r) { return r.json(); }).then(function (v) {
+        document.getElementById('server-version').textContent = v.version;
+      }).catch(function () { document.getElementById('server-version').textContent = 'เก่ามาก (ไม่มี /api/version)'; });
+    } else {
+      document.getElementById('server-version').textContent = '-';
+    }
     document.getElementById('logout-btn').addEventListener('click', function (e) {
       e.preventDefault();
       XPartsAuth.logout().then(function () { location.href = 'login.html'; });
