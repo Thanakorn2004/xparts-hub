@@ -13,6 +13,8 @@
   ];
   var current = SECTIONS[0];
   var typeOptions = ['ATTACK', 'DEFENSE', 'STAMINA', 'BALANCE'];
+  var myEmail = '';
+  var myRole = 'admin'; // becomes 'super' once /api/me resolves, if that's who's logged in
   var tabs = document.getElementById('admin-tabs');
   var root = document.getElementById('admin-root');
   var IMAGE_KINDS = { full: 1, basic: 1 };
@@ -294,6 +296,11 @@
      Requires the real Node server - there is no local-storage
      fallback, since admin accounts only make sense server-side.
      ========================================================= */
+  function roleLabel(r) { return r === 'super' ? 'แอดมินหลัก' : 'แอดมินรอง'; }
+  function roleBadge(r) {
+    return '<span class="px-2 py-1 text-xs font-bold ' + (r === 'super' ? 'bg-x-green text-black' : 'bg-zinc-800 text-white') + '">' + roleLabel(r) + '</span>';
+  }
+
   function drawAdmins() {
     if (!window.XPartsAuth.serverMode) {
       root.innerHTML = '<div class="bg-white border-[3px] border-black box-cut p-8 max-w-xl">' +
@@ -302,53 +309,137 @@
         '<p class="text-zinc-600 mt-2">วิธีแก้: เปิด terminal ในโฟลเดอร์โปรเจกต์ แล้วรัน <code class="bg-zinc-200 px-1">npm start</code> จากนั้นเข้าเว็บผ่าน <code class="bg-zinc-200 px-1">http://localhost:3000</code> (หรือโดเมนที่ deploy จริง) แทนการดับเบิลคลิกไฟล์ .html</p></div>';
       return;
     }
-    root.innerHTML =
-      '<div class="grid lg:grid-cols-[380px_minmax(0,1fr)] gap-7 items-start">' +
+
+    var isSuper = myRole === 'super';
+    var formSection = !isSuper ? '' :
       '<section class="bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#caff04] p-6">' +
       '<h2 class="font-x text-3xl border-b-[3px] border-black pb-2">+ เพิ่มแอดมินใหม่</h2>' +
       '<form id="add-admin-form" class="space-y-4 mt-5">' +
       '<label class="block font-bold text-sm">อีเมล<input name="email" type="email" required class="field mt-1 w-full border-2 border-black p-3" placeholder="admin2@example.com"></label>' +
       '<label class="block font-bold text-sm">รหัสผ่าน' + passwordFieldHtml() + '</label>' +
+      '<label class="block font-bold text-sm">ระดับแอดมิน<select name="role" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
+      '<option value="admin" selected>แอดมินรอง (จัดการข้อมูลได้ แต่แก้ไขบัญชีแอดมินไม่ได้)</option>' +
+      '<option value="super">แอดมินหลัก (ทำได้ทุกอย่าง รวมถึงจัดการบัญชีแอดมิน)</option>' +
+      '</select></label>' +
       '<button class="w-full bg-x-green text-black border-[3px] border-black font-x text-2xl py-3 box-cut hover:bg-black hover:text-x-green transition-colors">CREATE ADMIN</button></form>' +
-      '<p id="admin-notice" class="hidden mt-4 p-3 font-bold text-sm"></p></section>' +
-      '<section class="min-w-0"><h2 class="font-x text-3xl md:text-4xl mb-4">แอดมินทั้งหมด <span id="admin-count" class="c-x-red"></span></h2>' +
+      '<p id="admin-notice" class="hidden mt-4 p-3 font-bold text-sm"></p></section>';
+
+    root.innerHTML =
+      '<div class="grid lg:grid-cols-[380px_minmax(0,1fr)] gap-7 items-start">' +
+      formSection +
+      '<section class="min-w-0' + (isSuper ? '' : ' lg:col-span-2') + '">' +
+      (isSuper ? '' : '<p class="bg-zinc-100 border-2 border-black p-4 font-bold text-sm mb-4">เฉพาะ "แอดมินหลัก" เท่านั้นที่เพิ่ม/ลบ/แก้ไขบัญชีแอดมินได้ คุณดูรายชื่อได้อย่างเดียว</p>') +
+      '<h2 class="font-x text-3xl md:text-4xl mb-4">แอดมินทั้งหมด <span id="admin-count" class="c-x-red"></span></h2>' +
       '<div class="overflow-x-auto bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#09090b]">' +
-      '<table class="w-full text-left"><thead class="bg-black text-white font-x text-lg"><tr><th class="p-4">EMAIL</th></tr></thead><tbody id="admin-rows"></tbody></table></div>' +
+      '<table class="w-full text-left"><thead class="bg-black text-white font-x text-lg"><tr><th class="p-4">EMAIL</th><th class="p-4">ระดับ</th>' +
+      (isSuper ? '<th class="p-4">รหัสผ่าน</th><th class="p-4">ACTION</th>' : '') + '</tr></thead><tbody id="admin-rows"></tbody></table></div>' +
       '<p id="admin-list-error" class="hidden mt-3 bg-red-600 text-white p-3 font-bold text-sm"></p></section></div>';
 
     var form = document.getElementById('add-admin-form');
-    var notice = document.getElementById('admin-notice');
     var listError = document.getElementById('admin-list-error');
-    wirePasswordToggles(form);
+    var notice = document.getElementById('admin-notice');
+    if (form) wirePasswordToggles(form);
     function showNotice(msg, ok) {
+      if (!notice) { alert(msg); return; }
       notice.className = 'mt-4 p-3 font-bold text-sm ' + (ok ? 'bg-black text-x-green' : 'bg-red-600 text-white');
       notice.textContent = msg;
       notice.classList.remove('hidden');
+    }
+
+    function adminRowHtml(a) {
+      var isSelf = a.email === myEmail;
+      var cells = '<td class="p-4 font-bold">' + esc(a.email) + (isSelf ? ' <span class="text-xs text-zinc-400">(คุณ)</span>' : '') + '</td>' +
+        '<td class="p-4">' + roleBadge(a.role) + '</td>';
+      if (isSuper) {
+        cells += '<td class="p-4"><span data-pw-cell="' + esc(a.email) + '" class="font-mono text-xs text-zinc-400">••••••••</span> ' +
+          '<button data-view-pw="' + esc(a.email) + '" class="text-xs font-bold underline hover:text-x-red">ดูรหัส</button></td>';
+        var actions = '';
+        if (!isSelf) {
+          actions += '<button data-toggle-role="' + esc(a.email) + '" data-role="' + a.role + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black mr-2">' +
+            (a.role === 'super' ? 'ลดเป็นแอดมินรอง' : 'ตั้งเป็นแอดมินหลัก') + '</button>';
+        }
+        actions += '<button data-reset-pw="' + esc(a.email) + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black mr-2">รีเซ็ตรหัสผ่าน</button>';
+        if (!isSelf) {
+          actions += '<button data-delete-admin="' + esc(a.email) + '" class="bg-red-600 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black">DELETE</button>';
+        }
+        cells += '<td class="p-4 whitespace-nowrap">' + actions + '</td>';
+      }
+      return '<tr class="border-b-2 border-zinc-200">' + cells + '</tr>';
     }
 
     function render() {
       listError.classList.add('hidden');
       apiFetch('/api/admins').then(function (rows) {
         document.getElementById('admin-count').textContent = '(' + rows.length + ')';
-        document.getElementById('admin-rows').innerHTML = rows.length ? rows.map(function (a) {
-          return '<tr class="border-b-2 border-zinc-200"><td class="p-4 font-bold">' + esc(a.email) + '</td></tr>';
-        }).join('') : '<tr><td class="p-8 text-center text-zinc-500">ยังไม่มีข้อมูลแอดมิน</td></tr>';
+        document.getElementById('admin-rows').innerHTML = rows.length ? rows.map(adminRowHtml).join('')
+          : '<tr><td colspan="' + (isSuper ? 4 : 2) + '" class="p-8 text-center text-zinc-500">ยังไม่มีข้อมูลแอดมิน</td></tr>';
       }).catch(function (err) {
         listError.textContent = 'โหลดรายชื่อแอดมินไม่สำเร็จ: ' + (err.message || 'unknown error');
         listError.classList.remove('hidden');
       });
     }
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var email = form.email.value.trim();
-      var password = form.password.value;
-      apiFetch('/api/admins', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: password }) })
-        .then(function () {
-          form.reset();
-          showNotice('สร้างแอดมินใหม่แล้ว - ใช้อีเมล/รหัสผ่านนี้ล็อกอินได้ทันที', true);
-          setTimeout(function () { notice.classList.add('hidden'); }, 3000);
-          render();
-        }).catch(function (err) { showNotice(err.message || 'สร้างไม่สำเร็จ', false); });
+
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var email = form.email.value.trim();
+        var password = form.password.value;
+        var role = form.role.value;
+        apiFetch('/api/admins', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: password, role: role }) })
+          .then(function () {
+            form.reset();
+            showNotice('สร้างแอดมินใหม่แล้ว - ใช้อีเมล/รหัสผ่านนี้ล็อกอินได้ทันที', true);
+            setTimeout(function () { notice.classList.add('hidden'); }, 3000);
+            render();
+          }).catch(function (err) { showNotice(err.message || 'สร้างไม่สำเร็จ', false); });
+      });
+    }
+
+    document.getElementById('admin-rows').addEventListener('click', function (e) {
+      var viewBtn = e.target.closest('[data-view-pw]');
+      if (viewBtn) {
+        var viewEmail = viewBtn.getAttribute('data-view-pw');
+        var cell = document.querySelector('[data-pw-cell="' + viewEmail.replace(/"/g, '\\"') + '"]');
+        if (viewBtn.getAttribute('data-shown') === '1') {
+          if (cell) cell.textContent = '••••••••';
+          viewBtn.textContent = 'ดูรหัส';
+          viewBtn.setAttribute('data-shown', '0');
+          return;
+        }
+        apiFetch('/api/admins/' + encodeURIComponent(viewEmail) + '/password').then(function (v) {
+          if (cell) cell.textContent = v.password;
+          viewBtn.textContent = 'ซ่อนรหัส';
+          viewBtn.setAttribute('data-shown', '1');
+        }).catch(function (err) { showNotice(err.message || 'ดูรหัสไม่สำเร็จ', false); });
+        return;
+      }
+      var toggle = e.target.closest('[data-toggle-role]');
+      if (toggle) {
+        var email = toggle.getAttribute('data-toggle-role');
+        var newRole = toggle.getAttribute('data-role') === 'super' ? 'admin' : 'super';
+        if (!confirm((newRole === 'super' ? 'ตั้งให้ ' : 'ลดระดับ ') + email + (newRole === 'super' ? ' เป็นแอดมินหลัก?' : ' เป็นแอดมินรอง?'))) return;
+        apiFetch('/api/admins/' + encodeURIComponent(email), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) })
+          .then(render).catch(function (err) { showNotice(err.message || 'แก้ไขไม่สำเร็จ', false); });
+        return;
+      }
+      var resetBtn = e.target.closest('[data-reset-pw]');
+      if (resetBtn) {
+        var target = resetBtn.getAttribute('data-reset-pw');
+        var pw = prompt('ตั้งรหัสผ่านใหม่ให้ ' + target + ' (อย่างน้อย 6 ตัวอักษร):');
+        if (pw == null) return;
+        if (pw.length < 6) { showNotice('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', false); return; }
+        apiFetch('/api/admins/' + encodeURIComponent(target), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
+          .then(function () { showNotice('เปลี่ยนรหัสผ่านของ ' + target + ' แล้ว', true); setTimeout(function () { notice.classList.add('hidden'); }, 3000); })
+          .catch(function (err) { showNotice(err.message || 'แก้ไขไม่สำเร็จ', false); });
+        return;
+      }
+      var delBtn = e.target.closest('[data-delete-admin]');
+      if (delBtn) {
+        var delEmail = delBtn.getAttribute('data-delete-admin');
+        if (!confirm('ยืนยันลบแอดมิน ' + delEmail + '?')) return;
+        apiFetch('/api/admins/' + encodeURIComponent(delEmail), { method: 'DELETE' })
+          .then(render).catch(function (err) { showNotice(err.message || 'ลบไม่สำเร็จ', false); });
+      }
     });
     render();
   }
@@ -368,7 +459,15 @@
     drawCurrent();
   });
 
-  window.XPartsDB.col('categories').all().then(function (c) {
+  Promise.all([
+    window.XPartsDB.col('categories').all().catch(function () { return []; }),
+    window.XPartsAuth.me().catch(function () { return {}; })
+  ]).then(function (r) {
+    var c = r[0], me = r[1];
     if (c.length) typeOptions = c.map(function (x) { return String(x.name).toUpperCase(); });
-  }).catch(function () {}).then(function () { drawTabs(); drawCurrent(); });
+    myEmail = me.email || '';
+    myRole = me.role || 'admin';
+    drawTabs();
+    drawCurrent();
+  });
 })();

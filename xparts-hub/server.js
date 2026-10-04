@@ -56,6 +56,26 @@ function verifyPassword(password, stored) {
   const a = Buffer.from(parts[1], 'hex'), b = Buffer.from(test, 'hex');
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
+/* ---------- reversible copy (AES-256-GCM), ONLY so the primary admin can
+   view an admin's current password from the panel. Login still checks the
+   one-way hash above; this is a separate, additional copy. Accounts that
+   existed before this feature have no encrypted copy and can't be viewed,
+   only reset. ---------- */
+const ENC_KEY = crypto.createHash('sha256').update(SECRET + '::xparts-pw-view').digest();
+function encryptPassword(plain) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', ENC_KEY, iv);
+  const data = Buffer.concat([cipher.update(String(plain), 'utf8'), cipher.final()]);
+  return { iv: iv.toString('hex'), tag: cipher.getAuthTag().toString('hex'), data: data.toString('hex') };
+}
+function decryptPassword(enc) {
+  if (!enc || !enc.iv || !enc.tag || !enc.data) return null;
+  try {
+    const decipher = crypto.createDecipheriv('aes-256-gcm', ENC_KEY, Buffer.from(enc.iv, 'hex'));
+    decipher.setAuthTag(Buffer.from(enc.tag, 'hex'));
+    return Buffer.concat([decipher.update(Buffer.from(enc.data, 'hex')), decipher.final()]).toString('utf8');
+  } catch (e) { return null; }
+}
 
 /* ---------- users: seed default admin on first run ---------- */
 function readUsers() {
@@ -67,9 +87,22 @@ function writeUsers(rows) { fs.writeFileSync(USERS_FILE, JSON.stringify(rows, nu
   if (readUsers().length === 0) {
     const email = (process.env.ADMIN_EMAIL || 'admin@example.com').toLowerCase();
     const pass = process.env.ADMIN_PASSWORD || 'admin1234';
-    writeUsers([{ email: email, password: hashPassword(pass) }]);
+    writeUsers([{ email: email, password: hashPassword(pass), passwordEnc: encryptPassword(pass), role: 'super' }]);
     console.log('Seeded default admin -> ' + email + ' / ' + pass + '  (change ASAP)');
   }
+})();
+// One-time migration for accounts created before roles existed: the very
+// first account on record becomes the primary (super) admin, everyone else
+// becomes a regular admin, unless a super admin is already present.
+(function migrateRoles() {
+  const users = readUsers();
+  if (!users.length) return;
+  const hasSuper = users.some(u => u.role === 'super');
+  let changed = false;
+  users.forEach((u, i) => {
+    if (!u.role) { u.role = (!hasSuper && i === 0) ? 'super' : 'admin'; changed = true; }
+  });
+  if (changed) writeUsers(users);
 })();
 
 /* ---------- signed session token ---------- */
@@ -97,6 +130,19 @@ function requireAuth(req, res, next) {
   req.user = s;
   next();
 }
+// Looks up the signed-in user's CURRENT role from users.json (never trusts the
+// session cookie for this), so a role change takes effect immediately and a
+// deleted account can't keep acting through an old session.
+function currentRole(email) {
+  const u = readUsers().find(x => x.email === email);
+  return u ? (u.role || 'admin') : null;
+}
+function requireSuperAdmin(req, res, next) {
+  if (currentRole(req.user.email) !== 'super') {
+    return res.status(403).json({ error: 'ต้องเป็นแอดมินหลักเท่านั้น' });
+  }
+  next();
+}
 
 /* ---------- auth routes ---------- */
 app.post('/api/login', (req, res) => {
@@ -114,23 +160,76 @@ app.post('/api/logout', (req, res) => { res.clearCookie('xp_session'); res.json(
 app.get('/api/me', (req, res) => {
   const s = unsign(req.cookies && req.cookies.xp_session);
   if (!s) return res.status(401).json({ error: 'unauthorized' });
-  res.json({ email: s.email });
+  res.json({ email: s.email, role: currentRole(s.email) || 'admin' });
 });
 
-/* ---------- admin account management (must already be logged in) ---------- */
+/* ---------- admin account management ----------
+   Any logged-in admin can SEE the admin list (read-only for a regular
+   admin). Only the primary ("super") admin can create, edit the role of,
+   reset the password of, or delete an admin account. A super admin can
+   never delete their own account or demote/remove the last super admin,
+   so the panel can't lock everyone out. */
 app.get('/api/admins', requireAuth, (req, res) => {
-  res.json(readUsers().map(u => ({ email: u.email })));
+  res.json(readUsers().map(u => ({ email: u.email, role: u.role || 'admin' })));
 });
-app.post('/api/admins', requireAuth, (req, res) => {
+app.post('/api/admins', requireAuth, requireSuperAdmin, (req, res) => {
   const email = String((req.body && req.body.email) || '').toLowerCase().trim();
   const password = String((req.body && req.body.password) || '');
+  const role = req.body && req.body.role === 'super' ? 'super' : 'admin';
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'อีเมลไม่ถูกต้อง' });
   if (password.length < 6) return res.status(400).json({ error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' });
   const users = readUsers();
   if (users.some(u => u.email === email)) return res.status(400).json({ error: 'อีเมลนี้เป็นแอดมินอยู่แล้ว' });
-  users.push({ email: email, password: hashPassword(password) });
+  users.push({ email: email, password: hashPassword(password), passwordEnc: encryptPassword(password), role: role });
   writeUsers(users);
-  res.status(201).json({ email: email });
+  res.status(201).json({ email: email, role: role });
+});
+app.get('/api/admins/:email/password', requireAuth, requireSuperAdmin, (req, res) => {
+  const target = String(req.params.email || '').toLowerCase().trim();
+  const user = readUsers().find(u => u.email === target);
+  if (!user) return res.status(404).json({ error: 'ไม่พบแอดมินนี้' });
+  const plain = decryptPassword(user.passwordEnc);
+  if (plain == null) return res.status(404).json({ error: 'บัญชีนี้ถูกสร้างก่อนมีฟีเจอร์นี้ ดูรหัสเดิมไม่ได้ กรุณารีเซ็ตรหัสผ่านใหม่' });
+  res.json({ email: user.email, password: plain });
+});
+app.put('/api/admins/:email', requireAuth, requireSuperAdmin, (req, res) => {
+  const target = String(req.params.email || '').toLowerCase().trim();
+  const users = readUsers();
+  const user = users.find(u => u.email === target);
+  if (!user) return res.status(404).json({ error: 'ไม่พบแอดมินนี้' });
+
+  const body = req.body || {};
+  if (body.role !== undefined) {
+    if (body.role !== 'super' && body.role !== 'admin') return res.status(400).json({ error: 'ระดับแอดมินไม่ถูกต้อง' });
+    if (user.email === req.user.email && body.role !== 'super') {
+      return res.status(400).json({ error: 'ไม่สามารถลดระดับบัญชีของตัวเองได้' });
+    }
+    const otherSupers = users.filter(u => u.email !== target && u.role === 'super').length;
+    if ((user.role || 'admin') === 'super' && body.role !== 'super' && otherSupers === 0) {
+      return res.status(400).json({ error: 'ต้องมีแอดมินหลักเหลืออย่างน้อย 1 คน' });
+    }
+    user.role = body.role;
+  }
+  if (body.password !== undefined && body.password !== '') {
+    if (String(body.password).length < 6) return res.status(400).json({ error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' });
+    user.password = hashPassword(String(body.password));
+    user.passwordEnc = encryptPassword(String(body.password));
+  }
+  writeUsers(users);
+  res.json({ email: user.email, role: user.role || 'admin' });
+});
+app.delete('/api/admins/:email', requireAuth, requireSuperAdmin, (req, res) => {
+  const target = String(req.params.email || '').toLowerCase().trim();
+  if (target === req.user.email) return res.status(400).json({ error: 'ไม่สามารถลบบัญชีของตัวเองได้' });
+  const users = readUsers();
+  const user = users.find(u => u.email === target);
+  if (!user) return res.status(404).json({ error: 'ไม่พบแอดมินนี้' });
+  const otherSupers = users.filter(u => u.email !== target && u.role === 'super').length;
+  if ((user.role || 'admin') === 'super' && otherSupers === 0) {
+    return res.status(400).json({ error: 'ต้องมีแอดมินหลักเหลืออย่างน้อย 1 คน' });
+  }
+  writeUsers(users.filter(u => u.email !== target));
+  res.json({ ok: true });
 });
 
 /* ---------- image upload (admin only) ---------- */
