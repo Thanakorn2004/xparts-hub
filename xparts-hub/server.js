@@ -9,6 +9,11 @@ const multer = require('multer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const USERS_FILE = path.join(__dirname, 'users.json');
+// The original seeded account: can't be deleted by anyone, and no one but
+// this account itself can view its password (everything else about it -
+// role changes, resetting ITS password from another super admin - is
+// still allowed).
+const PROTECTED_EMAIL = (process.env.ADMIN_EMAIL || 'admin@example.com').toLowerCase();
 const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -170,7 +175,7 @@ app.get('/api/me', (req, res) => {
    never delete their own account or demote/remove the last super admin,
    so the panel can't lock everyone out. */
 app.get('/api/admins', requireAuth, (req, res) => {
-  res.json(readUsers().map(u => ({ email: u.email, role: u.role || 'admin' })));
+  res.json(readUsers().map(u => ({ email: u.email, role: u.role || 'admin', protected: u.email === PROTECTED_EMAIL })));
 });
 app.post('/api/admins', requireAuth, requireSuperAdmin, (req, res) => {
   const email = String((req.body && req.body.email) || '').toLowerCase().trim();
@@ -186,6 +191,9 @@ app.post('/api/admins', requireAuth, requireSuperAdmin, (req, res) => {
 });
 app.get('/api/admins/:email/password', requireAuth, requireSuperAdmin, (req, res) => {
   const target = String(req.params.email || '').toLowerCase().trim();
+  if (target === PROTECTED_EMAIL && req.user.email !== PROTECTED_EMAIL) {
+    return res.status(403).json({ error: 'ไม่สามารถดูรหัสผ่านของบัญชีนี้ได้' });
+  }
   const user = readUsers().find(u => u.email === target);
   if (!user) return res.status(404).json({ error: 'ไม่พบแอดมินนี้' });
   const plain = decryptPassword(user.passwordEnc);
@@ -221,6 +229,7 @@ app.put('/api/admins/:email', requireAuth, requireSuperAdmin, (req, res) => {
 app.delete('/api/admins/:email', requireAuth, requireSuperAdmin, (req, res) => {
   const target = String(req.params.email || '').toLowerCase().trim();
   if (target === req.user.email) return res.status(400).json({ error: 'ไม่สามารถลบบัญชีของตัวเองได้' });
+  if (target === PROTECTED_EMAIL) return res.status(400).json({ error: 'ไม่สามารถลบบัญชีนี้ได้' });
   const users = readUsers();
   const user = users.find(u => u.email === target);
   if (!user) return res.status(404).json({ error: 'ไม่พบแอดมินนี้' });

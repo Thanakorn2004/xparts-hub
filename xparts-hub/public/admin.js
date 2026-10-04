@@ -298,7 +298,7 @@
      ========================================================= */
   function roleLabel(r) { return r === 'super' ? 'แอดมินหลัก' : 'แอดมินรอง'; }
   function roleBadge(r) {
-    return '<span class="px-2 py-1 text-xs font-bold ' + (r === 'super' ? 'bg-x-green text-black' : 'bg-zinc-800 text-white') + '">' + roleLabel(r) + '</span>';
+    return '<span class="inline-block whitespace-nowrap px-2 py-1 text-xs font-bold ' + (r === 'super' ? 'bg-x-green text-black' : 'bg-zinc-800 text-white') + '">' + roleLabel(r) + '</span>';
   }
 
   function drawAdmins() {
@@ -348,18 +348,21 @@
 
     function adminRowHtml(a) {
       var isSelf = a.email === myEmail;
+      var canViewPw = !a.protected || isSelf; // only the protected account itself may reveal its own password
       var cells = '<td class="p-4 font-bold">' + esc(a.email) + (isSelf ? ' <span class="text-xs text-zinc-400">(คุณ)</span>' : '') + '</td>' +
-        '<td class="p-4">' + roleBadge(a.role) + '</td>';
+        '<td class="p-4 whitespace-nowrap">' + roleBadge(a.role) + '</td>';
       if (isSuper) {
-        cells += '<td class="p-4"><span data-pw-cell="' + esc(a.email) + '" class="font-mono text-xs text-zinc-400">••••••••</span> ' +
-          '<button data-view-pw="' + esc(a.email) + '" class="text-xs font-bold underline hover:text-x-red">ดูรหัส</button></td>';
+        cells += '<td class="p-4">' + (canViewPw ?
+          '<span data-pw-cell="' + esc(a.email) + '" class="font-mono text-xs text-zinc-400">••••••••</span> ' +
+          '<button data-view-pw="' + esc(a.email) + '" class="text-xs font-bold underline hover:text-x-red">ดูรหัส</button>' :
+          '<span class="text-xs text-zinc-400">ซ่อนไว้</span>') + '</td>';
         var actions = '';
         if (!isSelf) {
           actions += '<button data-toggle-role="' + esc(a.email) + '" data-role="' + a.role + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black mr-2">' +
             (a.role === 'super' ? 'ลดเป็นแอดมินรอง' : 'ตั้งเป็นแอดมินหลัก') + '</button>';
         }
         actions += '<button data-reset-pw="' + esc(a.email) + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black mr-2">รีเซ็ตรหัสผ่าน</button>';
-        if (!isSelf) {
+        if (!isSelf && !a.protected) {
           actions += '<button data-delete-admin="' + esc(a.email) + '" class="bg-red-600 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black">DELETE</button>';
         }
         cells += '<td class="p-4 whitespace-nowrap">' + actions + '</td>';
