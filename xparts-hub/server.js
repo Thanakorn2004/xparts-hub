@@ -205,6 +205,9 @@ app.put('/api/admins/:email', requireAuth, requireSuperAdmin, (req, res) => {
   const users = readUsers();
   const user = users.find(u => u.email === target);
   if (!user) return res.status(404).json({ error: 'ไม่พบแอดมินนี้' });
+  if (target === PROTECTED_EMAIL && req.user.email !== PROTECTED_EMAIL) {
+    return res.status(403).json({ error: 'ไม่สามารถแก้ไขบัญชีนี้ได้' });
+  }
 
   const body = req.body || {};
   if (body.role !== undefined) {

@@ -356,15 +356,19 @@
           '<span data-pw-cell="' + esc(a.email) + '" class="font-mono text-xs text-zinc-400">••••••••</span> ' +
           '<button data-view-pw="' + esc(a.email) + '" class="text-xs font-bold underline hover:text-x-red">ดูรหัส</button>' :
           '<span class="text-xs text-zinc-400">ซ่อนไว้</span>') + '</td>';
+        var canManage = !a.protected || isSelf; // only the protected account itself may change its own role/password
         var actions = '';
-        if (!isSelf) {
+        if (!isSelf && canManage) {
           actions += '<button data-toggle-role="' + esc(a.email) + '" data-role="' + a.role + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black mr-2">' +
             (a.role === 'super' ? 'ลดเป็นแอดมินรอง' : 'ตั้งเป็นแอดมินหลัก') + '</button>';
         }
-        actions += '<button data-reset-pw="' + esc(a.email) + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black mr-2">รีเซ็ตรหัสผ่าน</button>';
+        if (canManage) {
+          actions += '<button data-reset-pw="' + esc(a.email) + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black mr-2">รีเซ็ตรหัสผ่าน</button>';
+        }
         if (!isSelf && !a.protected) {
           actions += '<button data-delete-admin="' + esc(a.email) + '" class="bg-red-600 text-white border-2 border-black px-3 py-2 text-xs font-bold hover:bg-black">DELETE</button>';
         }
+        if (!actions) actions = '<span class="text-xs text-zinc-400">แก้ไขได้เฉพาะเจ้าของบัญชีนี้</span>';
         cells += '<td class="p-4 whitespace-nowrap">' + actions + '</td>';
       }
       return '<tr class="border-b-2 border-zinc-200">' + cells + '</tr>';
