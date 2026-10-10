@@ -21,6 +21,11 @@ window.XPartsDB = (function () {
     // collections that don't use them (beys, blades, categories...) stay clean.
     if (d.points !== undefined) out.points = d.points === '' || d.points == null ? null : Number(d.points);
     if (d.sectionId !== undefined) out.sectionId = d.sectionId === '' || d.sectionId == null ? null : Number(d.sectionId);
+    if (d.productCode !== undefined) out.productCode = String(d.productCode || '').trim();
+    if (d.color !== undefined) out.color = String(d.color || '').trim();
+    if (d.metalCoat !== undefined) out.metalCoat = !!d.metalCoat;
+    if (d.bladeCategory !== undefined) out.bladeCategory = String(d.bladeCategory || '').trim();
+    if (d.spin !== undefined) out.spin = String(d.spin || '').trim();
     return out;
   }
 

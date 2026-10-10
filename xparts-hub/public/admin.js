@@ -2,10 +2,10 @@
 (function () {
   var esc = window.XPartsDB.esc;
   var SECTIONS = [
-    { col: 'beys', label: 'BEYBLADE', kind: 'full', hint: 'เช่น Dran Sword 3-60F' },
-    { col: 'blades', label: 'BLADE', kind: 'full', hint: 'เช่น Dran Sword' },
-    { col: 'ratchets', label: 'RATCHET', kind: 'basic', hint: 'เช่น 3-60' },
-    { col: 'bits', label: 'BIT', kind: 'basic', hint: 'เช่น F (Flat)' },
+    { col: 'beys', label: 'BEYBLADE', kind: 'full', hint: 'เช่น Dran Sword 3-60F', hasProductCode: true, hasColor: true, hasMetalCoat: true, hasSpin: true },
+    { col: 'blades', label: 'BLADE', kind: 'full', hint: 'เช่น Dran Sword', hasProductCode: true, hasColor: true, hasMetalCoat: true, hasSpin: true, hasBladeCategory: true },
+    { col: 'ratchets', label: 'RATCHET', kind: 'basic', hint: 'เช่น 3-60', hasProductCode: true, hasColor: true },
+    { col: 'bits', label: 'BIT', kind: 'basic', hint: 'เช่น F (Flat)', hasProductCode: true, hasColor: true },
     { col: 'categories', label: 'CATEGORY', kind: 'name', hint: 'เช่น ATTACK' },
     { col: 'rules', label: 'RULES', kind: 'rules-blocks', hint: '' },
     { col: 'about', label: 'ABOUT', kind: 'about-blocks', hint: '' },
@@ -13,6 +13,8 @@
   ];
   var current = SECTIONS[0];
   var typeOptions = ['ATTACK', 'DEFENSE', 'STAMINA', 'BALANCE'];
+  // Parts category options for the BLADE tab only.
+  var BLADE_CATEGORIES = ['Blade', 'Ratchet-Integrated Blade', 'Lock Chip', 'Main Blade', 'Over Blade', 'Metal Blade', 'Assist Blade'];
   var myEmail = '';
   var myRole = 'admin'; // becomes 'super' once /api/me resolves, if that's who's logged in
   var tabs = document.getElementById('admin-tabs');
@@ -94,6 +96,24 @@
     if (s.kind === 'full' || s.kind === 'basic') {
       f += '<label class="block font-bold text-sm">น้ำหนัก (g)<input name="weight" type="number" min="0" step="0.01" class="field mt-1 w-full border-2 border-black p-3" placeholder="35.2"></label>';
     }
+    if (s.hasProductCode) {
+      f += '<label class="block font-bold text-sm">Product Code<input name="productCode" maxlength="40" class="field mt-1 w-full border-2 border-black p-3" placeholder="เช่น BX-01"></label>';
+    }
+    if (s.hasColor) {
+      f += '<label class="block font-bold text-sm">สี<input name="color" maxlength="40" class="field mt-1 w-full border-2 border-black p-3" placeholder="เช่น แดง / Red"></label>';
+    }
+    if (s.hasBladeCategory) {
+      f += '<label class="block font-bold text-sm">ส่วน Parts<select name="bladeCategory" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
+        '<option value="">- เลือกหมวดหมู่ -</option>' +
+        BLADE_CATEGORIES.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('') + '</select></label>';
+    }
+    if (s.hasSpin) {
+      f += '<label data-spin-field class="block font-bold text-sm">ทิศทางหมุน (Spin)<select name="spin" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
+        '<option value="">- เลือก -</option><option value="Right">Right</option><option value="Left">Left</option></select></label>';
+    }
+    if (s.hasMetalCoat) {
+      f += '<label class="flex items-center gap-2 font-bold text-sm mt-1"><input type="checkbox" name="metalCoat" class="w-5 h-5"> Metal Coat</label>';
+    }
     if (IMAGE_KINDS[s.kind]) {
       f += '<label class="block font-bold text-sm">รูปภาพ (อัปโหลดจากเครื่อง)<input name="image_file" type="file" accept="image/*" class="field mt-1 w-full border-2 border-black p-2 bg-white"></label>';
     }
@@ -103,9 +123,15 @@
     return f;
   }
   function extraHeaders(s) {
-    if (s.kind === 'full') return ['TYPE', 'WEIGHT'];
-    if (s.kind === 'basic') return ['WEIGHT'];
-    return [];
+    var h = [];
+    if (s.kind === 'full') h.push('TYPE');
+    if (s.kind === 'full' || s.kind === 'basic') h.push('WEIGHT');
+    if (s.hasProductCode) h.push('CODE');
+    if (s.hasColor) h.push('COLOR');
+    if (s.hasBladeCategory) h.push('PARTS');
+    if (s.hasSpin) h.push('SPIN');
+    if (s.hasMetalCoat) h.push('METAL COAT');
+    return h;
   }
   function nameCell(s, x) {
     if (s.kind === 'name') return '<strong>' + esc(x.name) + '</strong>';
@@ -113,9 +139,15 @@
       '<div><strong>' + esc(x.name) + '</strong><p class="text-xs text-zinc-500 max-w-xs truncate">' + esc(x.description || '-') + '</p></div></div>';
   }
   function extraCells(s, x) {
-    if (s.kind === 'full') return ['<span class="bg-black text-x-green px-3 py-1 text-xs font-bold">' + esc(x.type || '-') + '</span>', esc(x.weight || '-') + (x.weight ? ' g' : '')];
-    if (s.kind === 'basic') return [esc(x.weight || '-') + (x.weight ? ' g' : '')];
-    return [];
+    var c = [];
+    if (s.kind === 'full') c.push('<span class="bg-black text-x-green px-3 py-1 text-xs font-bold">' + esc(x.type || '-') + '</span>');
+    if (s.kind === 'full' || s.kind === 'basic') c.push(esc(x.weight || '-') + (x.weight ? ' g' : ''));
+    if (s.hasProductCode) c.push(esc(x.productCode || '-'));
+    if (s.hasColor) c.push(esc(x.color || '-'));
+    if (s.hasBladeCategory) c.push(esc(x.bladeCategory || '-'));
+    if (s.hasSpin) c.push(x.bladeCategory === 'Lock Chip' ? '-' : esc(x.spin || '-'));
+    if (s.hasMetalCoat) c.push(x.metalCoat ? '<span class="bg-x-green text-black px-2 py-1 text-xs font-bold">METAL COAT</span>' : '-');
+    return c;
   }
   function rowHtml(s, x) {
     var cells = [nameCell(s, x)].concat(extraCells(s, x));
@@ -147,6 +179,20 @@
     var notice = document.getElementById('notice');
     function showNotice(msg) { notice.textContent = msg; notice.classList.remove('hidden'); }
 
+    // BLADE only: Lock Chip pieces don't spin, so hide/clear the spin field
+    // whenever "Lock Chip" is the selected parts category.
+    if (s.hasBladeCategory && s.hasSpin) {
+      var catSelect = form.querySelector('[name="bladeCategory"]');
+      var spinField = form.querySelector('[data-spin-field]');
+      var syncSpinVisibility = function () {
+        var isLockChip = catSelect.value === 'Lock Chip';
+        spinField.classList.toggle('hidden', isLockChip);
+        if (isLockChip) spinField.querySelector('select').value = '';
+      };
+      catSelect.addEventListener('change', syncSpinVisibility);
+      syncSpinVisibility();
+    }
+
     function render() {
       window.XPartsDB.col(s.col).all().then(function (rows) {
         document.getElementById('count').textContent = '(' + rows.length + ')';
@@ -159,8 +205,9 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var d = {};
-      new FormData(form).forEach(function (v, k) { if (k !== 'image_file') d[k] = v; });
+      new FormData(form).forEach(function (v, k) { if (k !== 'image_file' && k !== 'metalCoat') d[k] = v; });
       if (!d.name || !d.name.trim()) return;
+      if (s.hasMetalCoat) d.metalCoat = !!(form.metalCoat && form.metalCoat.checked);
       var fileInput = form.querySelector('input[name="image_file"]');
       resolveImage(fileInput).then(function (url) {
         d.image = url;

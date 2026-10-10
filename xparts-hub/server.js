@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // Bump this string whenever server.js changes - lets you confirm from the
 // browser (GET /api/version) that the file actually running on Render is
 // the one you just uploaded, instead of guessing after a restart.
-const APP_VERSION = '2026-10-05.1-admin-roles-protected-account';
+const APP_VERSION = '2026-10-11.1-product-code-color-metalcoat-spin';
 const USERS_FILE = path.join(__dirname, 'users.json');
 // The original seeded account: can't be deleted by anyone, and no one but
 // this account itself can view its password (everything else about it -
@@ -302,6 +302,11 @@ app.post('/api/:col', validCol, requireAuth, (req, res) => {
     image: b.image || '',
     description: String(b.description || '').trim(),
     sectionId: b.sectionId === '' || b.sectionId == null ? null : Number(b.sectionId),
+    productCode: String(b.productCode || '').trim(),
+    color: String(b.color || '').trim(),
+    metalCoat: !!b.metalCoat,
+    bladeCategory: String(b.bladeCategory || '').trim(),
+    spin: String(b.spin || '').trim(),
     createdAt: new Date().toISOString()
   };
   rows.push(rec);
