@@ -98,12 +98,12 @@
             var secCards = cards.filter(function (c) { return String(c.sectionId) === String(sec.id); });
             return '<div class="space-y-6">' +
               '<div class="box-cut bg-zinc-950 text-white px-6 py-4 border-l-8 border-x-green">' +
-              '<h2 class="font-x text-3xl md:text-4xl text-shadow-none">' + esc(sec.name) + '</h2></div>' +
+              '<h2 class="font-x text-3xl md:text-4xl text-shadow-none">' + esc(sec.name || 'ไม่ระบุหัวข้อ') + '</h2></div>' +
               '<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">' +
               (secCards.length ? secCards.map(function (c) {
                 return '<div class="bg-white border-[3px] border-black box-cut overflow-hidden card-x">' +
                   (c.image ? '<img src="' + esc(c.image) + '" class="w-full h-40 object-cover" onerror="this.style.display=\'none\'">' : '') +
-                  '<div class="p-6"><h3 class="font-x text-2xl">' + esc(c.name) + '</h3>' +
+                  '<div class="p-6"><h3 class="font-x text-2xl">' + esc(c.name || 'ไม่ระบุชื่อ') + '</h3>' +
                   '<p class="text-sm text-zinc-600 mt-2 whitespace-pre-line">' + esc(c.description || '') + '</p></div></div>';
               }).join('') : '<p class="text-sm text-zinc-500 col-span-full">ยังไม่มีการ์ดในหมวดนี้ — เพิ่มได้จากหน้า Admin</p>') +
               '</div></div>';

@@ -3,9 +3,11 @@
   var esc = window.XPartsDB.esc;
   var SECTIONS = [
     { col: 'beys', label: 'BEYBLADE', kind: 'full', hint: 'เช่น Dran Sword 3-60F', hasProductCode: true, hasColor: true, hasMetalCoat: true, hasSpin: true },
-    { col: 'blades', label: 'BLADE', kind: 'full', hint: 'เช่น Dran Sword', hasProductCode: true, hasColor: true, hasMetalCoat: true, hasSpin: true, hasBladeCategory: true },
+    { col: 'blades', label: 'BLADE', kind: 'full', hint: 'เช่น Dran Sword', hasProductCode: true, hasColor: true, hasMetalCoat: true, hasSpin: true,
+      partsCategoryOptions: ['Blade', 'Ratchet-Integrated Blade', 'Lock Chip', 'Main Blade', 'Over Blade', 'Metal Blade', 'Assist Blade'] },
     { col: 'ratchets', label: 'RATCHET', kind: 'basic', hint: 'เช่น 3-60', hasProductCode: true, hasColor: true },
-    { col: 'bits', label: 'BIT', kind: 'basic', hint: 'เช่น F (Flat)', hasProductCode: true, hasColor: true },
+    { col: 'bits', label: 'BIT', kind: 'basic', hint: 'เช่น F (Flat)', hasProductCode: true, hasColor: true, hasType: true,
+      partsCategoryOptions: ['Bit', 'Ratchet-Integrated Bit'] },
     { col: 'categories', label: 'CATEGORY', kind: 'name', hint: 'เช่น ATTACK' },
     { col: 'rules', label: 'RULES', kind: 'rules-blocks', hint: '' },
     { col: 'about', label: 'ABOUT', kind: 'about-blocks', hint: '' },
@@ -13,8 +15,6 @@
   ];
   var current = SECTIONS[0];
   var typeOptions = ['ATTACK', 'DEFENSE', 'STAMINA', 'BALANCE'];
-  // Parts category options for the BLADE tab only.
-  var BLADE_CATEGORIES = ['Blade', 'Ratchet-Integrated Blade', 'Lock Chip', 'Main Blade', 'Over Blade', 'Metal Blade', 'Assist Blade'];
   var myEmail = '';
   var myRole = 'admin'; // becomes 'super' once /api/me resolves, if that's who's logged in
   var tabs = document.getElementById('admin-tabs');
@@ -85,11 +85,48 @@
   }
 
   /* =========================================================
+     Draft autosave: every "add" form (everywhere except ADMINS,
+     since caching an admin password in the browser would be a bad
+     idea) saves what's typed into localStorage as the admin types,
+     so half-filled data survives a reload or closing the tab. The
+     draft for a form is cleared only once that form is submitted
+     successfully.
+     ========================================================= */
+  var DRAFT_PREFIX = 'xparts_draft::';
+  function restoreDraft(form, key) {
+    var saved;
+    try { saved = JSON.parse(localStorage.getItem(DRAFT_PREFIX + key) || 'null'); } catch (e) { saved = null; }
+    if (!saved) return;
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!el.name || el.type === 'file' || !(el.name in saved)) return;
+      if (el.type === 'checkbox') el.checked = !!saved[el.name];
+      else el.value = saved[el.name];
+    });
+  }
+  function persistDraft(form, key) {
+    var data = {};
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!el.name || el.type === 'file') return;
+      data[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    try { localStorage.setItem(DRAFT_PREFIX + key, JSON.stringify(data)); } catch (e) {}
+  }
+  function clearDraft(key) {
+    try { localStorage.removeItem(DRAFT_PREFIX + key); } catch (e) {}
+  }
+  function wireDraft(form, key) {
+    if (!form) return;
+    restoreDraft(form, key);
+    form.addEventListener('input', function () { persistDraft(form, key); });
+    form.addEventListener('change', function () { persistDraft(form, key); });
+  }
+
+  /* =========================================================
      Generic CRUD (beys, blades, ratchets, bits, categories)
      ========================================================= */
   function formHtml(s) {
-    var f = '<label class="block font-bold text-sm">ชื่อ<input name="name" required maxlength="80" class="field mt-1 w-full border-2 border-black p-3" placeholder="' + esc(s.hint) + '"></label>';
-    if (s.kind === 'full') {
+    var f = '<label class="block font-bold text-sm">ชื่อ<input name="name" maxlength="80" class="field mt-1 w-full border-2 border-black p-3" placeholder="' + esc(s.hint) + '"></label>';
+    if (s.kind === 'full' || s.hasType) {
       f += '<label class="block font-bold text-sm">ประเภท<select name="type" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
         typeOptions.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('') + '</select></label>';
     }
@@ -102,10 +139,10 @@
     if (s.hasColor) {
       f += '<label class="block font-bold text-sm">สี<input name="color" maxlength="40" class="field mt-1 w-full border-2 border-black p-3" placeholder="เช่น แดง / Red"></label>';
     }
-    if (s.hasBladeCategory) {
-      f += '<label class="block font-bold text-sm">ส่วน Parts<select name="bladeCategory" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
+    if (s.partsCategoryOptions) {
+      f += '<label class="block font-bold text-sm">ส่วน Parts<select name="partsCategory" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
         '<option value="">- เลือกหมวดหมู่ -</option>' +
-        BLADE_CATEGORIES.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('') + '</select></label>';
+        s.partsCategoryOptions.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('') + '</select></label>';
     }
     if (s.hasSpin) {
       f += '<label data-spin-field class="block font-bold text-sm">ทิศทางหมุน (Spin)<select name="spin" class="field mt-1 w-full border-2 border-black p-3 bg-white">' +
@@ -124,28 +161,28 @@
   }
   function extraHeaders(s) {
     var h = [];
-    if (s.kind === 'full') h.push('TYPE');
+    if (s.kind === 'full' || s.hasType) h.push('TYPE');
     if (s.kind === 'full' || s.kind === 'basic') h.push('WEIGHT');
     if (s.hasProductCode) h.push('CODE');
     if (s.hasColor) h.push('COLOR');
-    if (s.hasBladeCategory) h.push('PARTS');
+    if (s.partsCategoryOptions) h.push('PARTS');
     if (s.hasSpin) h.push('SPIN');
     if (s.hasMetalCoat) h.push('METAL COAT');
     return h;
   }
   function nameCell(s, x) {
-    if (s.kind === 'name') return '<strong>' + esc(x.name) + '</strong>';
+    if (s.kind === 'name') return '<strong>' + esc(x.name || 'ไม่ระบุชื่อ') + '</strong>';
     return '<div class="flex items-center gap-3"><img class="thumb border-2 border-black" src="' + esc(x.image || window.XPartsDB.placeholder) + '" onerror="this.src=window.XPartsDB.placeholder">' +
-      '<div><strong>' + esc(x.name) + '</strong><p class="text-xs text-zinc-500 max-w-xs truncate">' + esc(x.description || '-') + '</p></div></div>';
+      '<div><strong>' + esc(x.name || 'ไม่ระบุชื่อ') + '</strong><p class="text-xs text-zinc-500 max-w-xs truncate">' + esc(x.description || '-') + '</p></div></div>';
   }
   function extraCells(s, x) {
     var c = [];
-    if (s.kind === 'full') c.push('<span class="bg-black text-x-green px-3 py-1 text-xs font-bold">' + esc(x.type || '-') + '</span>');
+    if (s.kind === 'full' || s.hasType) c.push('<span class="bg-black text-x-green px-3 py-1 text-xs font-bold">' + esc(x.type || '-') + '</span>');
     if (s.kind === 'full' || s.kind === 'basic') c.push(esc(x.weight || '-') + (x.weight ? ' g' : ''));
     if (s.hasProductCode) c.push(esc(x.productCode || '-'));
     if (s.hasColor) c.push(esc(x.color || '-'));
-    if (s.hasBladeCategory) c.push(esc(x.bladeCategory || '-'));
-    if (s.hasSpin) c.push(x.bladeCategory === 'Lock Chip' ? '-' : esc(x.spin || '-'));
+    if (s.partsCategoryOptions) c.push(esc(x.partsCategory || '-'));
+    if (s.hasSpin) c.push(x.partsCategory === 'Lock Chip' ? '-' : esc(x.spin || '-'));
     if (s.hasMetalCoat) c.push(x.metalCoat ? '<span class="bg-x-green text-black px-2 py-1 text-xs font-bold">METAL COAT</span>' : '-');
     return c;
   }
@@ -179,10 +216,12 @@
     var notice = document.getElementById('notice');
     function showNotice(msg) { notice.textContent = msg; notice.classList.remove('hidden'); }
 
+    wireDraft(form, 'section:' + s.col);
+
     // BLADE only: Lock Chip pieces don't spin, so hide/clear the spin field
     // whenever "Lock Chip" is the selected parts category.
-    if (s.hasBladeCategory && s.hasSpin) {
-      var catSelect = form.querySelector('[name="bladeCategory"]');
+    if (s.partsCategoryOptions && s.hasSpin) {
+      var catSelect = form.querySelector('[name="partsCategory"]');
       var spinField = form.querySelector('[data-spin-field]');
       var syncSpinVisibility = function () {
         var isLockChip = catSelect.value === 'Lock Chip';
@@ -206,7 +245,6 @@
       e.preventDefault();
       var d = {};
       new FormData(form).forEach(function (v, k) { if (k !== 'image_file' && k !== 'metalCoat') d[k] = v; });
-      if (!d.name || !d.name.trim()) return;
       if (s.hasMetalCoat) d.metalCoat = !!(form.metalCoat && form.metalCoat.checked);
       var fileInput = form.querySelector('input[name="image_file"]');
       resolveImage(fileInput).then(function (url) {
@@ -214,6 +252,7 @@
         return window.XPartsDB.col(s.col).add(d);
       }).then(function () {
         form.reset();
+        clearDraft('section:' + s.col);
         showNotice('บันทึกข้อมูลแล้ว - หน้าเว็บจะอัปเดตอัตโนมัติ');
         setTimeout(function () { notice.classList.add('hidden'); }, 2500);
         render();
@@ -241,7 +280,7 @@
       '<section class="bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#caff04] p-6 max-w-xl">' +
       '<h2 class="font-x text-2xl border-b-[3px] border-black pb-2">+ เพิ่มบล็อกใหม่ (แถบหัวข้อ)</h2>' +
       '<form id="add-section-form" class="space-y-3 mt-4">' +
-      '<label class="block font-bold text-sm">ข้อความบนแถบหัวข้อ<input name="name" required maxlength="120" class="field mt-1 w-full border-2 border-black p-3" placeholder="เช่น กติกาพิเศษ"></label>' +
+      '<label class="block font-bold text-sm">ข้อความบนแถบหัวข้อ<input name="name" maxlength="120" class="field mt-1 w-full border-2 border-black p-3" placeholder="เช่น กติกาพิเศษ"></label>' +
       '<button class="w-full bg-x-green text-black border-[3px] border-black font-x text-xl py-2 box-cut hover:bg-black hover:text-x-green transition-colors">เพิ่มบล็อก</button></form>' +
       '<p id="block-notice" class="hidden mt-4 bg-black text-x-green p-3 font-bold text-sm"></p></section>';
 
@@ -251,16 +290,15 @@
     var hasImageField = cfg.cardNeedsImage || cfg.cardImageOptional;
 
     function cardFieldsHtml() {
-      var f = '<label class="block font-bold text-xs">หัวข้อ<input name="name" required maxlength="80" class="field mt-1 w-full border-2 border-black p-2"></label>';
+      var f = '<label class="block font-bold text-xs">หัวข้อ<input name="name" maxlength="80" class="field mt-1 w-full border-2 border-black p-2"></label>';
       if (cfg.cardNeedsImage) {
         f += '<label class="block font-bold text-xs">คะแนน (Point)<input name="points" type="number" min="1" max="5" class="field mt-1 w-full border-2 border-black p-2"></label>';
       }
       if (hasImageField) {
-        f += '<label class="block font-bold text-xs md:col-span-2">รูปภาพ' + (cfg.cardNeedsImage ? ' (จำเป็น - อัปโหลดจากเครื่อง)' : ' (ถ้ามี - อัปโหลดจากเครื่อง)') +
-          '<input name="image_file" type="file" accept="image/*" ' + (cfg.cardNeedsImage ? 'required ' : '') +
-          'class="field mt-1 w-full border-2 border-black p-2 bg-white"></label>';
+        f += '<label class="block font-bold text-xs md:col-span-2">รูปภาพ (ถ้ามี - อัปโหลดจากเครื่อง)' +
+          '<input name="image_file" type="file" accept="image/*" class="field mt-1 w-full border-2 border-black p-2 bg-white"></label>';
       }
-      f += '<label class="block font-bold text-xs md:col-span-2">เนื้อหา<textarea name="description" rows="2" ' + (cfg.cardNeedsImage ? '' : 'required ') + 'class="field mt-1 w-full border-2 border-black p-2"></textarea></label>';
+      f += '<label class="block font-bold text-xs md:col-span-2">เนื้อหา<textarea name="description" rows="2" class="field mt-1 w-full border-2 border-black p-2"></textarea></label>';
       return f;
     }
     function cardDisplayHtml(c) {
@@ -268,7 +306,7 @@
       var pointsLine = cfg.cardNeedsImage ? '<p class="text-xs text-zinc-500 font-bold">คะแนน: ' + esc(c.points || '-') + '</p>' : '';
       return '<div class="bg-zinc-100 border-2 border-black p-4 flex gap-3">' + thumb +
         '<div class="flex-1"><div class="flex justify-between gap-2 items-start">' +
-        '<strong class="font-x text-lg">' + esc(c.name) + '</strong>' +
+        '<strong class="font-x text-lg">' + esc(c.name || 'ไม่ระบุชื่อ') + '</strong>' +
         '<button data-delete-card="' + c.id + '" class="text-x-red font-bold text-xs hover:underline whitespace-nowrap">ลบ</button></div>' +
         pointsLine +
         '<p class="text-sm text-zinc-600 mt-1">' + esc(c.description || '-') + '</p></div></div>';
@@ -293,19 +331,37 @@
         wrap.innerHTML = sections.length ? sections.slice().reverse().map(function (sec) {
           return blockHtml(sec, cards.filter(function (c) { return String(c.sectionId) === String(sec.id); }));
         }).join('') : '<div class="bg-white border-[3px] border-black box-cut p-8 text-center"><p class="font-x text-2xl">NO DATA</p><p class="text-zinc-500 mt-2">เพิ่มบล็อกแรกจากแบบฟอร์มด้านล่าง</p></div>';
+        // Each block's "add card" form is rebuilt from scratch here, so
+        // restore whatever draft that section had going.
+        wrap.querySelectorAll('[data-add-card]').forEach(function (f) {
+          restoreDraft(f, 'blockcard:' + cfg.cardCol + ':' + f.getAttribute('data-add-card'));
+        });
       });
     }
 
-    document.getElementById('add-section-form').addEventListener('submit', function (e) {
+    var sectionForm = document.getElementById('add-section-form');
+    wireDraft(sectionForm, 'blocksection:' + cfg.sectionCol);
+    sectionForm.addEventListener('submit', function (e) {
       e.preventDefault();
       var name = e.target.name.value.trim();
-      if (!name) return;
       window.XPartsDB.col(cfg.sectionCol).add({ name: name }).then(function () {
         e.target.reset();
+        clearDraft('blocksection:' + cfg.sectionCol);
         showNotice('เพิ่มบล็อกแล้ว');
         setTimeout(function () { notice.classList.add('hidden'); }, 2000);
         render();
       }).catch(function (err) { showNotice(err.message || 'เพิ่มไม่สำเร็จ'); });
+    });
+
+    // Delegated draft autosave for every (dynamically recreated) "add card"
+    // form inside a block.
+    wrap.addEventListener('input', function (e) {
+      var f = e.target.closest('[data-add-card]');
+      if (f) persistDraft(f, 'blockcard:' + cfg.cardCol + ':' + f.getAttribute('data-add-card'));
+    });
+    wrap.addEventListener('change', function (e) {
+      var f = e.target.closest('[data-add-card]');
+      if (f) persistDraft(f, 'blockcard:' + cfg.cardCol + ':' + f.getAttribute('data-add-card'));
     });
 
     wrap.addEventListener('submit', function (e) {
@@ -314,15 +370,16 @@
       e.preventDefault();
       var sectionId = f.getAttribute('data-add-card');
       var d = { name: f.name.value.trim(), description: (f.description ? f.description.value.trim() : ''), sectionId: sectionId };
-      if (!d.name) return;
       if (f.points) d.points = f.points.value;
       var fileInput = f.querySelector('input[name="image_file"]');
       resolveImage(fileInput).then(function (url) {
-        if (cfg.cardNeedsImage && !url) throw new Error('กรุณาเลือกรูปภาพ');
         if (url) d.image = url;
         return window.XPartsDB.col(cfg.cardCol).add(d);
-      }).then(function () { f.reset(); render(); })
-        .catch(function (err) { showNotice(err.message || 'เพิ่มการ์ดไม่สำเร็จ'); });
+      }).then(function () {
+        clearDraft('blockcard:' + cfg.cardCol + ':' + sectionId);
+        f.reset();
+        render();
+      }).catch(function (err) { showNotice(err.message || 'เพิ่มการ์ดไม่สำเร็จ'); });
     });
     wrap.addEventListener('click', function (e) {
       var delSec = e.target.closest('[data-delete-section]');

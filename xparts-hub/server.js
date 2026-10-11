@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // Bump this string whenever server.js changes - lets you confirm from the
 // browser (GET /api/version) that the file actually running on Render is
 // the one you just uploaded, instead of guessing after a restart.
-const APP_VERSION = '2026-10-11.1-product-code-color-metalcoat-spin';
+const APP_VERSION = '2026-10-12.1-bit-parts-draft-autosave-optional-fields';
 const USERS_FILE = path.join(__dirname, 'users.json');
 // The original seeded account: can't be deleted by anyone, and no one but
 // this account itself can view its password (everything else about it -
@@ -281,15 +281,15 @@ app.get('/api/:col', validCol, (req, res) => res.json(readCol(req.params.col)));
 app.post('/api/:col', validCol, requireAuth, (req, res) => {
   const b = req.body || {};
   const col = req.params.col;
+  // Every field is optional - including name, image, description, points,
+  // color, product code, etc. - so an entry can be saved and shown on the
+  // site even with incomplete data. The one exception is "sectionId" for
+  // block cards (rules/about), which isn't a field the admin fills in by
+  // hand - the UI sets it automatically to whichever block's "add card"
+  // form was submitted - so it's always present and checking it here only
+  // guards against a malformed request, not incomplete data entry.
   const name = String(b.name || '').trim();
-  if (!name) return res.status(400).json({ error: 'name is required' });
-  if (col === 'rules_cards' && !String(b.image || '').trim()) {
-    return res.status(400).json({ error: 'image is required for rules cards' });
-  }
   if (BLOCK_CARD_COLS[col]) {
-    if (col === 'about_cards' && !String(b.description || '').trim()) {
-      return res.status(400).json({ error: 'description is required for about cards' });
-    }
     if (b.sectionId == null || b.sectionId === '') return res.status(400).json({ error: 'sectionId is required' });
   }
   const rows = readCol(col);
@@ -305,7 +305,7 @@ app.post('/api/:col', validCol, requireAuth, (req, res) => {
     productCode: String(b.productCode || '').trim(),
     color: String(b.color || '').trim(),
     metalCoat: !!b.metalCoat,
-    bladeCategory: String(b.bladeCategory || '').trim(),
+    partsCategory: String(b.partsCategory || '').trim(),
     spin: String(b.spin || '').trim(),
     createdAt: new Date().toISOString()
   };

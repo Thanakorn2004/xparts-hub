@@ -24,7 +24,7 @@ window.XPartsDB = (function () {
     if (d.productCode !== undefined) out.productCode = String(d.productCode || '').trim();
     if (d.color !== undefined) out.color = String(d.color || '').trim();
     if (d.metalCoat !== undefined) out.metalCoat = !!d.metalCoat;
-    if (d.bladeCategory !== undefined) out.bladeCategory = String(d.bladeCategory || '').trim();
+    if (d.partsCategory !== undefined) out.partsCategory = String(d.partsCategory || '').trim();
     if (d.spin !== undefined) out.spin = String(d.spin || '').trim();
     return out;
   }
@@ -54,9 +54,9 @@ window.XPartsDB = (function () {
   function card(x, badge) {
     var b = badge || x.type;
     return '<article class="card-x bg-white border-[3px] border-black box-cut overflow-hidden">' +
-      '<img src="' + esc(x.image || PLACEHOLDER) + '" onerror="this.src=window.XPartsDB.placeholder" class="w-full aspect-square object-cover bg-zinc-100" alt="' + esc(x.name) + '">' +
+      '<img src="' + esc(x.image || PLACEHOLDER) + '" onerror="this.src=window.XPartsDB.placeholder" class="w-full aspect-square object-cover bg-zinc-100" alt="' + esc(x.name || 'ไม่ระบุชื่อ') + '">' +
       '<div class="p-4"><div class="flex justify-between gap-3 items-start">' +
-      '<h4 class="font-x text-2xl text-black">' + esc(x.name) + '</h4>' +
+      '<h4 class="font-x text-2xl text-black">' + esc(x.name || 'ไม่ระบุชื่อ') + '</h4>' +
       (b ? '<span class="bg-black text-x-green px-2 py-1 text-xs font-bold whitespace-nowrap">' + esc(b) + '</span>' : '') +
       '</div><p class="text-sm text-zinc-600 mt-2">' + esc(x.description || 'ไม่มีรายละเอียด') + '</p>' +
       '<div class="mt-4 pt-3 border-t-2 border-zinc-200 text-xs font-bold text-zinc-500">WEIGHT: ' + esc(x.weight || '-') + (x.weight ? ' g' : '') + '</div>' +
