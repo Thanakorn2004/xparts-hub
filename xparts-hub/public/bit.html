@@ -44,6 +44,7 @@
       <p class="text-sm text-zinc-600 font-medium"><strong>Bit</strong> คือแกนหมุนล่างสุดพร้อมเฟืองสำหรับขบราง Xtreme Line รูปทรงปลายแกน (Flat / Ball / Needle / Taper ฯลฯ) กำหนดพฤติกรรมการวิ่งของเบย์เบลดทั้งลูก</p>
     </div>
     <div id="catalog-filters" class="flex flex-wrap justify-center gap-2"></div>
+    <div id="catalog-parts-filters" class="flex flex-wrap justify-center gap-2"></div>
     <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </main>
 
@@ -62,6 +63,6 @@
     }).catch(function () {});
   </script>
   <script src="catalog.js"></script>
-  <script>initCatalog('bits', { badge: 'BIT', emptyMsg: 'ยังไม่มีข้อมูล Bit — เพิ่มได้จากหน้า Admin' });</script>
+  <script>initCatalog('bits', { badge: 'BIT', partsFilter: ['Bit', 'Ratchet-Integrated Bit'], emptyMsg: 'ยังไม่มีข้อมูล Bit — เพิ่มได้จากหน้า Admin' });</script>
 </body>
 </html>

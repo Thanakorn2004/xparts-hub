@@ -44,6 +44,7 @@
       <p class="text-sm text-zinc-600 font-medium"><strong>Blade</strong> คือใบมีดโลหะด้านบน เป็นชิ้นส่วนหลักที่ใช้ปะทะ น้ำหนักและรูปทรงของใบมีดกำหนดสไตล์การเล่น ทั้งสายโจมตี ป้องกัน ทนทาน และสมดุล</p>
     </div>
     <div id="catalog-filters" class="flex flex-wrap justify-center gap-2"></div>
+    <div id="catalog-parts-filters" class="flex flex-wrap justify-center gap-2"></div>
     <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </main>
 
@@ -62,6 +63,6 @@
     }).catch(function () {});
   </script>
   <script src="catalog.js"></script>
-  <script>initCatalog('blades', { useFilter: true, emptyMsg: 'ยังไม่มีข้อมูล Blade — เพิ่มได้จากหน้า Admin' });</script>
+  <script>initCatalog('blades', { useFilter: true, partsFilter: ['Blade', 'Ratchet-Integrated Blade', 'Lock Chip', 'Main Blade', 'Over Blade', 'Metal Blade', 'Assist Blade'], emptyMsg: 'ยังไม่มีข้อมูล Blade — เพิ่มได้จากหน้า Admin' });</script>
 </body>
 </html>
