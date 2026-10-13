@@ -32,6 +32,11 @@
       <p class="text-zinc-400 font-bold">จัดการข้อมูลเบย์เบลด ชิ้นส่วน และหมวดหมู่ที่จะแสดงบนหน้าเว็บ</p>
       <p class="text-xs text-zinc-500 mt-3">STORAGE: <span id="storage-mode" class="text-x-green font-bold"></span> &middot; USER: <span id="current-user" class="text-x-green font-bold">-</span></p>
       <p class="text-[10px] text-zinc-600 mt-1">SERVER VERSION: <span id="server-version">-</span></p>
+      <p id="backup-bar" class="hidden text-xs mt-3 font-bold">
+        <a href="/api/backup" class="c-x-green underline">⬇ ดาวน์โหลดข้อมูลสำรอง (JSON)</a>
+        <span class="text-zinc-600 mx-2">|</span>
+        <label class="c-x-green underline cursor-pointer">⬆ กู้คืนจากไฟล์สำรอง<input id="restore-file" type="file" accept=".json,application/json" class="hidden"></label>
+      </p>
     </section>
 
     <div id="admin-tabs" class="flex flex-wrap gap-2"></div>
@@ -52,6 +57,23 @@
       }).catch(function () { document.getElementById('server-version').textContent = 'เก่ามาก (ไม่มี /api/version)'; });
     } else {
       document.getElementById('server-version').textContent = '-';
+    }
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      document.getElementById('backup-bar').classList.remove('hidden');
+      document.getElementById('restore-file').addEventListener('change', function (e) {
+        var f = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!f) return;
+        f.text().then(function (t) {
+          var data;
+          try { data = JSON.parse(t); } catch (err) { alert('ไฟล์นี้ไม่ใช่ JSON ที่ถูกต้อง'); return; }
+          if (!confirm('กู้คืนจากไฟล์สำรอง? ข้อมูลหมวดที่อยู่ในไฟล์จะถูกแทนที่ทั้งหมด (รูปภาพที่อัปโหลดไว้ไม่รวมในไฟล์สำรอง)')) return;
+          fetch('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+            .then(function (r) { return r.json().then(function (v) { if (!r.ok) throw new Error(v.error || 'กู้คืนไม่สำเร็จ'); return v; }); })
+            .then(function (v) { alert('กู้คืนแล้ว: ' + v.restored.join(', ')); location.reload(); })
+            .catch(function (err) { alert(err.message); });
+        });
+      });
     }
     document.getElementById('logout-btn').addEventListener('click', function (e) {
       e.preventDefault();
