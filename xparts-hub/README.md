@@ -70,6 +70,7 @@ Password: admin1234
 | ------ | ---- | ------- | ----------- |
 | GET | /api/{beys,blades,ratchets,bits,categories} | ดึงข้อมูล | ไม่ |
 | POST | /api/{collection} | เพิ่มข้อมูล | ใช่ |
+| PUT | /api/{collection}/:id | แก้ไขข้อมูล 1 รายการ (ส่งเฉพาะฟิลด์ที่ต้องการแก้) | ใช่ |
 | DELETE | /api/{collection}/:id | ลบ 1 รายการ | ใช่ |
 | DELETE | /api/{collection} | ลบทั้งหมด | ใช่ |
 | POST | /api/login, /api/logout | เข้า/ออกระบบ | - |

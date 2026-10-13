@@ -152,78 +152,86 @@
       f += '<label class="flex items-center gap-2 font-bold text-sm mt-1"><input type="checkbox" name="metalCoat" class="w-5 h-5"> Metal Coat</label>';
     }
     if (IMAGE_KINDS[s.kind]) {
-      f += '<label class="block font-bold text-sm">รูปภาพ (อัปโหลดจากเครื่อง)<input name="image_file" type="file" accept="image/*" class="field mt-1 w-full border-2 border-black p-2 bg-white"></label>';
+      f += '<label class="block font-bold text-sm">รูปภาพ (อัปโหลดจากเครื่อง)<input name="image_file" type="file" accept="image/*" class="field mt-1 w-full border-2 border-black p-2 bg-white"></label>' +
+        '<div data-edit-image class="hidden -mt-2 p-3 bg-zinc-100 border-2 border-black"><p class="text-xs font-bold mb-2">รูปปัจจุบัน (เลือกไฟล์ใหม่ด้านบนเพื่อเปลี่ยนรูป)</p>' +
+        '<img data-edit-image-preview class="w-32 h-32 object-contain bg-white border-2 border-black" alt="">' +
+        '<label class="flex items-center gap-2 text-xs font-bold mt-2"><input type="checkbox" name="remove_image" class="w-4 h-4"> ลบรูปเดิมออก</label></div>';
     }
     if (s.kind !== 'name') {
       f += '<label class="block font-bold text-sm">รายละเอียด<textarea name="description" rows="3" maxlength="500" class="field mt-1 w-full border-2 border-black p-3"></textarea></label>';
     }
     return f;
   }
-  function extraHeaders(s) {
-    var h = [];
-    if (s.kind === 'full' || s.hasType) h.push('TYPE');
-    if (s.kind === 'full' || s.kind === 'basic') h.push('WEIGHT');
-    if (s.hasProductCode) h.push('CODE');
-    if (s.hasColor) h.push('COLOR');
-    if (s.partsCategoryOptions) h.push('PARTS');
-    if (s.hasSpin) h.push('SPIN');
-    if (s.hasMetalCoat) h.push('METAL COAT');
-    return h;
+  function chip(label, val) {
+    return '<span class="inline-block bg-zinc-100 border border-zinc-300 px-2 py-0.5 text-xs"><b class="text-zinc-500">' + label + '</b> ' + val + '</span>';
   }
-  function nameCell(s, x) {
-    if (s.kind === 'name') return '<strong>' + esc(x.name || 'ไม่ระบุชื่อ') + '</strong>';
-    return '<div class="flex items-center gap-3"><img class="thumb border-2 border-black" src="' + esc(x.image || window.XPartsDB.placeholder) + '" onerror="this.src=window.XPartsDB.placeholder">' +
-      '<div><strong>' + esc(x.name || 'ไม่ระบุชื่อ') + '</strong><p class="text-xs text-zinc-500 max-w-xs truncate">' + esc(x.description || '-') + '</p></div></div>';
-  }
-  function extraCells(s, x) {
+  function metaChips(s, x) {
     var c = [];
-    if (s.kind === 'full' || s.hasType) c.push('<span class="bg-black text-x-green px-3 py-1 text-xs font-bold">' + esc(x.type || '-') + '</span>');
-    if (s.kind === 'full' || s.kind === 'basic') c.push(esc(x.weight || '-') + (x.weight ? ' g' : ''));
-    if (s.hasProductCode) c.push(esc(x.productCode || '-'));
-    if (s.hasColor) c.push(esc(x.color || '-'));
-    if (s.partsCategoryOptions) c.push(esc(x.partsCategory || '-'));
-    if (s.hasSpin) c.push(x.partsCategory === 'Lock Chip' ? '-' : esc(x.spin || '-'));
-    if (s.hasMetalCoat) c.push(x.metalCoat ? '<span class="bg-x-green text-black px-2 py-1 text-xs font-bold">METAL COAT</span>' : '-');
-    return c;
+    if ((s.kind === 'full' || s.hasType) && x.type) c.push('<span class="inline-block bg-black text-x-green px-2 py-0.5 text-xs font-bold">' + esc(x.type) + '</span>');
+    if (x.weight) c.push(chip('WEIGHT', esc(x.weight) + ' g'));
+    if (s.hasProductCode && x.productCode) c.push(chip('CODE', esc(x.productCode)));
+    if (s.hasColor && x.color) c.push(chip('COLOR', esc(x.color)));
+    if (s.partsCategoryOptions && x.partsCategory) c.push(chip('PARTS', esc(x.partsCategory)));
+    if (s.hasSpin && x.spin && x.partsCategory !== 'Lock Chip') c.push(chip('SPIN', esc(x.spin)));
+    if (s.hasMetalCoat && x.metalCoat) c.push('<span class="inline-block bg-x-green text-black border border-black px-2 py-0.5 text-xs font-bold">METAL COAT</span>');
+    return c.join('');
   }
-  function rowHtml(s, x) {
-    var cells = [nameCell(s, x)].concat(extraCells(s, x));
-    return '<tr class="border-b-2 border-zinc-200">' + cells.map(function (c) { return '<td class="p-4">' + c + '</td>'; }).join('') +
-      '<td class="p-4"><button data-delete="' + x.id + '" class="bg-red-600 text-white border-2 border-black px-4 py-2 font-bold hover:bg-black">DELETE</button></td></tr>';
+  // One list row per saved entry: click anywhere on it (or the EDIT button) to edit.
+  function rowHtml(s, x, editingId) {
+    var isEdit = editingId != null && String(x.id) === String(editingId);
+    var thumb = s.kind === 'name' ? '' :
+      '<img class="thumb border-2 border-black" src="' + esc(x.image || window.XPartsDB.placeholder) + '" onerror="this.src=window.XPartsDB.placeholder" alt="">';
+    var desc = x.description ? '<p class="text-xs text-zinc-500 mt-1 break-words" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + esc(x.description) + '</p>' : '';
+    var chips = metaChips(s, x);
+    return '<div data-row="' + x.id + '" title="คลิกเพื่อแก้ไข" class="flex items-start gap-4 p-4 border-b-2 border-zinc-200 cursor-pointer hover:bg-zinc-50" ' +
+      (isEdit ? 'style="background:#f3ffc2;box-shadow:inset 6px 0 0 #09090b"' : '') + '>' + thumb +
+      '<div class="min-w-0 flex-1"><strong class="block text-lg break-words">' + esc(x.name || 'ไม่ระบุชื่อ') + '</strong>' + desc +
+      (chips ? '<div class="flex flex-wrap gap-1.5 mt-2">' + chips + '</div>' : '') + '</div>' +
+      '<div class="flex flex-col sm:flex-row gap-2 shrink-0">' +
+      '<button data-edit="' + x.id + '" class="bg-zinc-800 text-white border-2 border-black px-3 py-2 text-sm font-bold hover:bg-black">EDIT</button>' +
+      '<button data-delete="' + x.id + '" class="bg-red-600 text-white border-2 border-black px-3 py-2 text-sm font-bold hover:bg-black">DELETE</button></div></div>';
   }
 
   function drawSection() {
     var s = current;
-    var extra = extraHeaders(s);
-    var cols = 2 + extra.length;
+    var editingId = null;
+    var cache = [];
     root.innerHTML =
       '<div class="grid lg:grid-cols-[380px_minmax(0,1fr)] gap-7 items-start">' +
-      '<section class="bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#caff04] p-6">' +
-      '<h2 class="font-x text-3xl border-b-[3px] border-black pb-2">+ ADD ' + s.label + '</h2>' +
+      '<section id="form-card" class="bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#caff04] p-6" style="scroll-margin-top:110px">' +
+      '<h2 id="form-title" class="font-x text-3xl border-b-[3px] border-black pb-2">+ ADD ' + s.label + '</h2>' +
       '<form id="add-form" class="space-y-4 mt-5">' + formHtml(s) +
-      '<button class="w-full bg-x-green text-black border-[3px] border-black font-x text-2xl py-3 box-cut hover:bg-black hover:text-x-green transition-colors">SAVE TO DATABASE</button></form>' +
+      '<button id="submit-btn" class="w-full bg-x-green text-black border-[3px] border-black font-x text-2xl py-3 box-cut hover:bg-black hover:text-x-green transition-colors">SAVE TO DATABASE</button>' +
+      '<button type="button" id="cancel-edit" class="hidden w-full bg-white text-black border-[3px] border-black font-x text-xl py-2 hover:bg-black hover:text-white transition-colors">CANCEL (ยกเลิกการแก้ไข)</button></form>' +
       '<p id="notice" class="hidden mt-4 bg-black text-x-green p-3 font-bold text-sm"></p></section>' +
       '<section class="min-w-0"><div class="flex justify-between items-end gap-4 mb-4">' +
       '<h2 class="font-x text-3xl md:text-4xl">ALL ' + s.label + ' <span id="count" class="c-x-red"></span></h2>' +
       '<button id="delete-all" class="hidden bg-red-600 text-white px-4 py-2 border-2 border-black font-bold">ลบทั้งหมด</button></div>' +
-      '<div class="overflow-x-auto bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#09090b]">' +
-      '<table class="w-full text-left" style="min-width:640px"><thead class="bg-black text-white font-x text-lg"><tr>' +
-      '<th class="p-4">NAME</th>' + extra.map(function (l) { return '<th class="p-4">' + l + '</th>'; }).join('') +
-      '<th class="p-4">ACTION</th></tr></thead><tbody id="rows"></tbody></table></div></section></div>';
+      '<p class="text-xs font-bold text-zinc-500 mb-2">💡 คลิกที่รายการเพื่อแก้ไขข้อมูล</p>' +
+      '<div id="rows" class="bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#09090b] overflow-hidden"></div></section></div>';
 
     var form = document.getElementById('add-form');
     var rowsEl = document.getElementById('rows');
     var notice = document.getElementById('notice');
+    var titleEl = document.getElementById('form-title');
+    var submitBtn = document.getElementById('submit-btn');
+    var cancelBtn = document.getElementById('cancel-edit');
+    var imgBox = form.querySelector('[data-edit-image]');
+    var draftKey = 'section:' + s.col;
     function showNotice(msg) { notice.textContent = msg; notice.classList.remove('hidden'); }
 
-    wireDraft(form, 'section:' + s.col);
+    // Draft autosave only applies to the "add" form - never while editing.
+    restoreDraft(form, draftKey);
+    form.addEventListener('input', function () { if (editingId == null) persistDraft(form, draftKey); });
+    form.addEventListener('change', function () { if (editingId == null) persistDraft(form, draftKey); });
 
     // BLADE only: Lock Chip pieces don't spin, so hide/clear the spin field
     // whenever "Lock Chip" is the selected parts category.
+    var syncSpinVisibility = function () {};
     if (s.partsCategoryOptions && s.hasSpin) {
       var catSelect = form.querySelector('[name="partsCategory"]');
       var spinField = form.querySelector('[data-spin-field]');
-      var syncSpinVisibility = function () {
+      syncSpinVisibility = function () {
         var isLockChip = catSelect.value === 'Lock Chip';
         spinField.classList.toggle('hidden', isLockChip);
         if (isLockChip) spinField.querySelector('select').value = '';
@@ -232,38 +240,109 @@
       syncSpinVisibility();
     }
 
-    function render() {
-      window.XPartsDB.col(s.col).all().then(function (rows) {
-        document.getElementById('count').textContent = '(' + rows.length + ')';
-        document.getElementById('delete-all').classList.toggle('hidden', !rows.length);
-        rowsEl.innerHTML = rows.length ? rows.map(function (x) { return rowHtml(s, x); }).join('')
-          : '<tr><td colspan="' + cols + '" class="p-12 text-center"><div class="font-x text-3xl">NO DATA</div><p class="text-zinc-500 mt-2">เพิ่มข้อมูลจากแบบฟอร์มด้านซ้าย</p></td></tr>';
-      });
+    function drawRows() {
+      document.getElementById('count').textContent = '(' + cache.length + ')';
+      document.getElementById('delete-all').classList.toggle('hidden', !cache.length);
+      rowsEl.innerHTML = cache.length ? cache.map(function (x) { return rowHtml(s, x, editingId); }).join('')
+        : '<div class="p-12 text-center"><div class="font-x text-3xl">NO DATA</div><p class="text-zinc-500 mt-2">เพิ่มข้อมูลจากแบบฟอร์มด้านซ้าย</p></div>';
     }
+    function render() {
+      return window.XPartsDB.col(s.col).all().then(function (rows) { cache = rows; drawRows(); });
+    }
+
+    function startEdit(x) {
+      editingId = x.id;
+      form.reset();
+      Array.prototype.forEach.call(form.elements, function (el) {
+        if (!el.name || el.type === 'file') return;
+        if (el.name === 'remove_image') { el.checked = false; return; }
+        if (el.type === 'checkbox') { el.checked = !!x[el.name]; return; }
+        var v = x[el.name] == null ? '' : String(x[el.name]);
+        if (el.tagName === 'SELECT') {
+          var has = Array.prototype.some.call(el.options, function (o) { return o.value === v || o.text === v; });
+          if (!has && v) { var opt = document.createElement('option'); opt.textContent = v; el.appendChild(opt); }
+        }
+        el.value = v;
+        if (el.tagName === 'SELECT' && el.selectedIndex < 0) el.selectedIndex = 0;
+      });
+      if (imgBox) {
+        imgBox.classList.toggle('hidden', !x.image);
+        if (x.image) imgBox.querySelector('[data-edit-image-preview]').src = x.image;
+      }
+      syncSpinVisibility();
+      titleEl.textContent = '✎ EDIT ' + s.label;
+      submitBtn.textContent = 'SAVE CHANGES';
+      cancelBtn.classList.remove('hidden');
+      showNotice('กำลังแก้ไข: ' + (x.name || 'ไม่ระบุชื่อ'));
+      drawRows();
+      document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function endEdit() {
+      editingId = null;
+      form.reset();
+      restoreDraft(form, draftKey);
+      if (imgBox) imgBox.classList.add('hidden');
+      syncSpinVisibility();
+      titleEl.textContent = '+ ADD ' + s.label;
+      submitBtn.textContent = 'SAVE TO DATABASE';
+      cancelBtn.classList.add('hidden');
+      notice.classList.add('hidden');
+      drawRows();
+    }
+    cancelBtn.addEventListener('click', endEdit);
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var d = {};
-      new FormData(form).forEach(function (v, k) { if (k !== 'image_file' && k !== 'metalCoat') d[k] = v; });
+      new FormData(form).forEach(function (v, k) { if (k !== 'image_file' && k !== 'metalCoat' && k !== 'remove_image') d[k] = v; });
       if (s.hasMetalCoat) d.metalCoat = !!(form.metalCoat && form.metalCoat.checked);
       var fileInput = form.querySelector('input[name="image_file"]');
+      var wasEditing = editingId;
+      var removeImg = !!(form.elements.remove_image && form.elements.remove_image.checked);
       resolveImage(fileInput).then(function (url) {
+        if (wasEditing != null) {
+          if (url) d.image = url;            // new file chosen -> replace
+          else if (removeImg) d.image = '';  // "remove image" ticked -> clear
+          // otherwise d.image stays undefined -> existing image is kept
+          return window.XPartsDB.col(s.col).update(wasEditing, d);
+        }
         d.image = url;
         return window.XPartsDB.col(s.col).add(d);
       }).then(function () {
-        form.reset();
-        clearDraft('section:' + s.col);
-        showNotice('บันทึกข้อมูลแล้ว - หน้าเว็บจะอัปเดตอัตโนมัติ');
-        setTimeout(function () { notice.classList.add('hidden'); }, 2500);
+        if (wasEditing != null) {
+          endEdit();
+          showNotice('บันทึกการแก้ไขแล้ว - หน้าเว็บจะอัปเดตอัตโนมัติ');
+        } else {
+          form.reset();
+          clearDraft(draftKey);
+          syncSpinVisibility();
+          showNotice('บันทึกข้อมูลแล้ว - หน้าเว็บจะอัปเดตอัตโนมัติ');
+        }
+        setTimeout(function () { if (editingId == null) notice.classList.add('hidden'); }, 2500);
         render();
       }).catch(function (err) { showNotice(err.message || 'บันทึกไม่สำเร็จ'); });
     });
+
     rowsEl.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-delete]');
-      if (b && confirm('ยืนยันการลบข้อมูลนี้?')) window.XPartsDB.col(s.col).remove(b.getAttribute('data-delete')).then(render);
+      var del = e.target.closest('[data-delete]');
+      if (del) {
+        var id = del.getAttribute('data-delete');
+        if (confirm('ยืนยันการลบข้อมูลนี้?')) {
+          window.XPartsDB.col(s.col).remove(id).then(function () {
+            if (editingId != null && String(editingId) === String(id)) endEdit();
+            render();
+          });
+        }
+        return;
+      }
+      var row = e.target.closest('[data-row]');
+      if (!row) return;
+      var rid = row.getAttribute('data-row');
+      var item = cache.filter(function (x) { return String(x.id) === String(rid); })[0];
+      if (item) startEdit(item);
     });
     document.getElementById('delete-all').addEventListener('click', function () {
-      if (confirm('ยืนยันการลบข้อมูลทั้งหมดในหมวดนี้?')) window.XPartsDB.col(s.col).clear().then(render);
+      if (confirm('ยืนยันการลบข้อมูลทั้งหมดในหมวดนี้?')) window.XPartsDB.col(s.col).clear().then(function () { if (editingId != null) endEdit(); render(); });
     });
     render();
   }
@@ -288,6 +367,8 @@
     var notice = document.getElementById('block-notice');
     function showNotice(msg) { notice.textContent = msg; notice.classList.remove('hidden'); }
     var hasImageField = cfg.cardNeedsImage || cfg.cardImageOptional;
+    var editingCardId = null;
+    var lastSections = [];
 
     function cardFieldsHtml() {
       var f = '<label class="block font-bold text-xs">หัวข้อ<input name="name" maxlength="80" class="field mt-1 w-full border-2 border-black p-2"></label>';
@@ -301,22 +382,42 @@
       f += '<label class="block font-bold text-xs md:col-span-2">เนื้อหา<textarea name="description" rows="2" class="field mt-1 w-full border-2 border-black p-2"></textarea></label>';
       return f;
     }
+    function cardEditHtml(c) {
+      var f = '<form data-edit-card-form="' + c.id + '" class="bg-white border-[3px] border-black p-4 grid gap-2 md:col-span-2" style="background:#f3ffc2">' +
+        '<p class="font-x text-lg">✎ แก้ไขการ์ด</p>' +
+        '<label class="block font-bold text-xs">หัวข้อ<input name="name" maxlength="80" value="' + esc(c.name || '') + '" class="field mt-1 w-full border-2 border-black p-2 bg-white"></label>';
+      if (cfg.cardNeedsImage) {
+        f += '<label class="block font-bold text-xs">คะแนน (Point)<input name="points" type="number" min="1" max="5" value="' + esc(c.points == null ? '' : c.points) + '" class="field mt-1 w-full border-2 border-black p-2 bg-white"></label>';
+      }
+      if (hasImageField) {
+        f += '<div class="font-bold text-xs">รูปภาพ' + (c.image ? '<div class="flex items-center gap-3 mt-1"><img class="w-24 h-24 object-contain bg-white border-2 border-black" src="' + esc(c.image) + '" alt="">' +
+          '<label class="flex items-center gap-2"><input type="checkbox" name="remove_image" class="w-4 h-4"> ลบรูปเดิมออก</label></div>' : '') +
+          '<input name="image_file" type="file" accept="image/*" class="field mt-1 w-full border-2 border-black p-2 bg-white"></div>';
+      }
+      f += '<label class="block font-bold text-xs">เนื้อหา<textarea name="description" rows="3" class="field mt-1 w-full border-2 border-black p-2 bg-white">' + esc(c.description || '') + '</textarea></label>' +
+        '<div class="flex gap-2"><button class="bg-x-green border-2 border-black font-x text-lg px-4 py-2">SAVE CHANGES</button>' +
+        '<button type="button" data-cancel-edit-card class="bg-white border-2 border-black font-x text-lg px-4 py-2 hover:bg-black hover:text-white">CANCEL</button></div></form>';
+      return f;
+    }
     function cardDisplayHtml(c) {
+      if (editingCardId != null && String(c.id) === String(editingCardId)) return cardEditHtml(c);
       var thumb = hasImageField ? '<img class="thumb border-2 border-black" src="' + esc(c.image || window.XPartsDB.placeholder) + '" onerror="this.src=window.XPartsDB.placeholder">' : '';
       var pointsLine = cfg.cardNeedsImage ? '<p class="text-xs text-zinc-500 font-bold">คะแนน: ' + esc(c.points || '-') + '</p>' : '';
       return '<div class="bg-zinc-100 border-2 border-black p-4 flex gap-3">' + thumb +
-        '<div class="flex-1"><div class="flex justify-between gap-2 items-start">' +
+        '<div class="flex-1 min-w-0"><div class="flex justify-between gap-2 items-start">' +
         '<strong class="font-x text-lg">' + esc(c.name || 'ไม่ระบุชื่อ') + '</strong>' +
-        '<button data-delete-card="' + c.id + '" class="text-x-red font-bold text-xs hover:underline whitespace-nowrap">ลบ</button></div>' +
+        '<span class="whitespace-nowrap"><button data-edit-card="' + c.id + '" class="font-bold text-xs hover:underline mr-3">แก้ไข</button>' +
+        '<button data-delete-card="' + c.id + '" class="text-x-red font-bold text-xs hover:underline">ลบ</button></span></div>' +
         pointsLine +
-        '<p class="text-sm text-zinc-600 mt-1">' + esc(c.description || '-') + '</p></div></div>';
+        '<p class="text-sm text-zinc-600 mt-1 break-words whitespace-pre-line">' + esc(c.description || '-') + '</p></div></div>';
     }
 
     function blockHtml(sec, cards) {
       return '<div class="bg-white border-[3px] border-black box-cut overflow-hidden" data-section-block="' + sec.id + '">' +
         '<div class="bg-zinc-950 px-6 py-4 flex justify-between items-center gap-3 flex-wrap">' +
-        '<h3 class="font-x text-2xl text-x-green">' + esc(sec.name) + '</h3>' +
-        '<button data-delete-section="' + sec.id + '" class="bg-x-red text-white border-2 border-black px-3 py-1 text-xs font-bold hover:bg-black">ลบบล็อกนี้ (รวมการ์ดข้างใน)</button></div>' +
+        '<h3 class="font-x text-2xl text-x-green break-words min-w-0">' + esc(sec.name) + '</h3>' +
+        '<span class="flex gap-2"><button data-edit-section="' + sec.id + '" class="bg-white text-black border-2 border-black px-3 py-1 text-xs font-bold hover:bg-x-green">แก้ไขชื่อบล็อก</button>' +
+        '<button data-delete-section="' + sec.id + '" class="bg-x-red text-white border-2 border-black px-3 py-1 text-xs font-bold hover:bg-black">ลบบล็อกนี้ (รวมการ์ดข้างใน)</button></span></div>' +
         '<div class="p-6 grid md:grid-cols-2 gap-4">' +
         (cards.length ? cards.map(cardDisplayHtml).join('') : '<p class="text-sm text-zinc-500 col-span-full">ยังไม่มีการ์ดในบล็อกนี้</p>') +
         '</div>' +
@@ -328,6 +429,7 @@
     function render() {
       Promise.all([window.XPartsDB.col(cfg.sectionCol).all(), window.XPartsDB.col(cfg.cardCol).all()]).then(function (r) {
         var sections = r[0], cards = r[1];
+        lastSections = sections;
         wrap.innerHTML = sections.length ? sections.slice().reverse().map(function (sec) {
           return blockHtml(sec, cards.filter(function (c) { return String(c.sectionId) === String(sec.id); }));
         }).join('') : '<div class="bg-white border-[3px] border-black box-cut p-8 text-center"><p class="font-x text-2xl">NO DATA</p><p class="text-zinc-500 mt-2">เพิ่มบล็อกแรกจากแบบฟอร์มด้านล่าง</p></div>';
@@ -365,6 +467,21 @@
     });
 
     wrap.addEventListener('submit', function (e) {
+      var ef = e.target.closest('[data-edit-card-form]');
+      if (ef) {
+        e.preventDefault();
+        var cid = ef.getAttribute('data-edit-card-form');
+        var ed = { name: ef.elements['name'].value.trim(), description: ef.elements['description'].value.trim() };
+        if (ef.elements['points']) ed.points = ef.elements['points'].value;
+        var efile = ef.querySelector('input[name="image_file"]');
+        var rm = !!(ef.elements['remove_image'] && ef.elements['remove_image'].checked);
+        resolveImage(efile).then(function (url) {
+          if (url) ed.image = url; else if (rm) ed.image = '';
+          return window.XPartsDB.col(cfg.cardCol).update(cid, ed);
+        }).then(function () { editingCardId = null; render(); })
+          .catch(function (err) { alert(err.message || 'บันทึกการแก้ไขไม่สำเร็จ'); });
+        return;
+      }
       var f = e.target.closest('[data-add-card]');
       if (!f) return;
       e.preventDefault();
@@ -382,6 +499,19 @@
       }).catch(function (err) { showNotice(err.message || 'เพิ่มการ์ดไม่สำเร็จ'); });
     });
     wrap.addEventListener('click', function (e) {
+      var editCard = e.target.closest('[data-edit-card]');
+      if (editCard) { editingCardId = editCard.getAttribute('data-edit-card'); render(); return; }
+      if (e.target.closest('[data-cancel-edit-card]')) { editingCardId = null; render(); return; }
+      var editSec = e.target.closest('[data-edit-section]');
+      if (editSec) {
+        var sid = editSec.getAttribute('data-edit-section');
+        var sec = lastSections.filter(function (x) { return String(x.id) === String(sid); })[0];
+        var nn = prompt('แก้ไขข้อความบนแถบหัวข้อ', sec ? sec.name : '');
+        if (nn == null) return;
+        window.XPartsDB.col(cfg.sectionCol).update(sid, { name: nn.trim() }).then(render)
+          .catch(function (err) { alert(err.message || 'แก้ไขไม่สำเร็จ'); });
+        return;
+      }
       var delSec = e.target.closest('[data-delete-section]');
       if (delSec && confirm('ลบบล็อกนี้ทั้งหมด (รวมการ์ดข้างใน)?')) {
         window.XPartsDB.col(cfg.sectionCol).remove(delSec.getAttribute('data-delete-section')).then(render);

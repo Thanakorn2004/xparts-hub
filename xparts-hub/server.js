@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // Bump this string whenever server.js changes - lets you confirm from the
 // browser (GET /api/version) that the file actually running on Render is
 // the one you just uploaded, instead of guessing after a restart.
-const APP_VERSION = '2026-10-12.2-blade-bit-parts-filter-bar';
+const APP_VERSION = '2026-10-13.1-edit-entries-full-cards';
 const USERS_FILE = path.join(__dirname, 'users.json');
 // The original seeded account: can't be deleted by anyone, and no one but
 // this account itself can view its password (everything else about it -
@@ -312,6 +312,41 @@ app.post('/api/:col', validCol, requireAuth, (req, res) => {
   rows.push(rec);
   writeCol(col, rows);
   res.status(201).json(rec);
+});
+
+// Edit an existing entry (partial update: only the fields present in the
+// request body are changed, so e.g. the image is kept unless a new one - or
+// an explicit empty string to remove it - is sent).
+app.put('/api/:col/:id', validCol, requireAuth, (req, res) => {
+  const col = req.params.col;
+  const b = req.body || {};
+  const rows = readCol(col);
+  const rec = rows.find(x => String(x.id) === String(req.params.id));
+  if (!rec) return res.status(404).json({ error: 'ไม่พบข้อมูลนี้' });
+  const str = k => String(b[k] == null ? '' : b[k]).trim();
+  const num = k => (b[k] === '' || b[k] == null || isNaN(Number(b[k]))) ? null : Number(b[k]);
+  if ('name' in b) rec.name = str('name');
+  if ('type' in b) rec.type = b.type ? String(b.type).toUpperCase() : '';
+  if ('weight' in b) rec.weight = num('weight');
+  if ('points' in b) rec.points = num('points');
+  if ('description' in b) rec.description = str('description');
+  if ('productCode' in b) rec.productCode = str('productCode');
+  if ('color' in b) rec.color = str('color');
+  if ('partsCategory' in b) rec.partsCategory = str('partsCategory');
+  if ('spin' in b) rec.spin = str('spin');
+  if ('metalCoat' in b) rec.metalCoat = !!b.metalCoat;
+  if ('image' in b) {
+    const newImg = b.image || '';
+    const oldImg = rec.image || '';
+    // tidy up the replaced upload so old files don't pile up on disk
+    if (oldImg && oldImg !== newImg && oldImg.indexOf('/uploads/') === 0) {
+      try { fs.unlinkSync(path.join(UPLOAD_DIR, path.basename(oldImg))); } catch (e) {}
+    }
+    rec.image = newImg;
+  }
+  rec.updatedAt = new Date().toISOString();
+  writeCol(col, rows);
+  res.json(rec);
 });
 
 app.delete('/api/:col/:id', validCol, requireAuth, (req, res) => {
