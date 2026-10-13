@@ -88,9 +88,8 @@
           groups.forEach(function (g) {
             var rows = g.rows.filter(function (x) {
               if (!q) return true;
-              return String(x.name).toLowerCase().indexOf(q) >= 0 ||
-                     String(x.description || '').toLowerCase().indexOf(q) >= 0 ||
-                     String(x.type || '').toLowerCase().indexOf(q) >= 0;
+              // match on the name only (not description / type)
+              return String(x.name || '').toLowerCase().indexOf(q) >= 0;
             });
             total += rows.length;
             if (rows.length) {
