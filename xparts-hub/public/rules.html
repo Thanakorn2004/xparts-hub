@@ -105,7 +105,7 @@
               '<div class="grid md:grid-cols-2 gap-6">' +
               (secCards.length ? secCards.map(function (c) {
                 return '<div class="bg-white border-[3px] border-black box-cut overflow-hidden card-x">' +
-                  (c.image ? '<img src="' + esc(c.image) + '" class="w-full h-40 object-cover" onerror="this.style.display=\'none\'">' : '') +
+                  (c.image ? '<img src="' + esc(c.image) + '" data-zoom="1" title="คลิกเพื่อดูรูปเต็ม" class="w-full h-auto object-contain bg-zinc-100 cursor-zoom-in" onerror="this.style.display=\'none\'">' : '') +
                   '<div class="p-6"><div class="flex justify-between items-start gap-3">' +
                   '<h3 class="font-x text-3xl">' + esc(c.name || 'ไม่ระบุชื่อ') + '</h3>' +
                   (c.points ? '<span class="bg-black text-x-green font-x text-xl px-3 py-1 whitespace-nowrap">' + esc(c.points) + 'P</span>' : '') +

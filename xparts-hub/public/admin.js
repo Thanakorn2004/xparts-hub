@@ -183,7 +183,7 @@
       '<img class="thumb border-2 border-black" src="' + esc(x.image || window.XPartsDB.placeholder) + '" onerror="this.src=window.XPartsDB.placeholder" alt="">';
     var desc = x.description ? '<p class="text-xs text-zinc-500 mt-1 break-words" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + esc(x.description) + '</p>' : '';
     var chips = metaChips(s, x);
-    return '<div data-row="' + x.id + '" title="คลิกเพื่อแก้ไข" class="flex items-start gap-4 p-4 border-b-2 border-zinc-200 cursor-pointer hover:bg-zinc-50" ' +
+    return '<div data-row="' + x.id + '" class="flex items-start gap-4 p-4 border-b-2 border-zinc-200" ' +
       (isEdit ? 'style="background:#f3ffc2;box-shadow:inset 6px 0 0 #09090b"' : '') + '>' + thumb +
       '<div class="min-w-0 flex-1"><strong class="block text-lg break-words">' + esc(x.name || 'ไม่ระบุชื่อ') + '</strong>' + desc +
       (chips ? '<div class="flex flex-wrap gap-1.5 mt-2">' + chips + '</div>' : '') + '</div>' +
@@ -207,7 +207,7 @@
       '<section class="min-w-0"><div class="flex justify-between items-end gap-4 mb-4">' +
       '<h2 class="font-x text-3xl md:text-4xl">ALL ' + s.label + ' <span id="count" class="c-x-red"></span></h2>' +
       '<button id="delete-all" class="hidden bg-red-600 text-white px-4 py-2 border-2 border-black font-bold">ลบทั้งหมด</button></div>' +
-      '<p class="text-xs font-bold text-zinc-500 mb-2">💡 คลิกที่รายการเพื่อแก้ไขข้อมูล</p>' +
+      '<p class="text-xs font-bold text-zinc-500 mb-2">💡 กดปุ่ม EDIT ที่รายการเพื่อแก้ไขข้อมูล</p>' +
       '<div id="rows" class="bg-white border-[3px] border-black box-cut shadow-[7px_7px_0_0_#09090b] overflow-hidden"></div></section></div>';
 
     var form = document.getElementById('add-form');
@@ -335,9 +335,9 @@
         }
         return;
       }
-      var row = e.target.closest('[data-row]');
-      if (!row) return;
-      var rid = row.getAttribute('data-row');
+      var ed = e.target.closest('[data-edit]');
+      if (!ed) return;
+      var rid = ed.getAttribute('data-edit');
       var item = cache.filter(function (x) { return String(x.id) === String(rid); })[0];
       if (item) startEdit(item);
     });
